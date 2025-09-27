@@ -225,8 +225,6 @@
   const nextBtn = document.getElementById('nextBtn');
   const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
-  const geminiKeyInput = document.getElementById('geminiKeyInput');
-  const saveGeminiKey = document.getElementById('saveGeminiKey');
   const PLACEHOLDER = albumArtImg.src;
 
   let originalAlbumArtUrl = PLACEHOLDER;
@@ -238,11 +236,7 @@
   let isPlaying = false;
   let waveform;
 
-  // Gemini
-  let GEMINI_API_KEY = localStorage.getItem('gemini_key') || '';
-  if (GEMINI_API_KEY) geminiKeyInput.value = GEMINI_API_KEY;
-
-  /* -------------------- YouTube IFrame API -------------------- */
+  /* -------------------- YouTube IFrame Player API 로드 -------------------- */
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -264,7 +258,7 @@
   }
 
   /* -------------------- 유틸 -------------------- */
-  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns'; // ← 너의 키로 교체 가능
+  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns'; // 너의 키로 교체 가능
   function setCssVar(name, value) { document.documentElement.style.setProperty(name, value); }
   function setLayout(mode) {
     playerDiv.classList.toggle('layout-horizontal', mode === 'horizontal');
@@ -281,6 +275,46 @@
   const stripTopic = s => s?.replace(/\s*-\s*Topic$/i,'').trim();
   const stripBrackets = s => s?.replace(/\s*[\(\[][^)\]]*[\)\]]\s*/g,' ').replace(/\s{2,}/g,' ').trim();
   const escapeHtml = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+
+  // 🔧 INST/MR/노래방/키 정보 등 제거
+  function removeInstTokens(title){
+    let t = title;
+    const patterns = [
+      /\binst(?:rumental)?\b/ig,
+      /\binstrumental\b/ig,
+      /\bver\.?\b/ig,
+      /\bmr\b/ig,
+      /노래방|가라오케|伴奏|반주/ig,
+      /tj\s*노래방/ig,
+      /karaoke/ig,
+      /official\s*instrumental/ig,
+      /\bminus\s*one\b/ig,
+      // 키 정보
+      /[+\-]?\d+\s*key/ig,
+      /\bkey\s*[+\-]?\d+\b/ig,
+      /남자키|여자키|남키|여키|남Key|여Key/ig,
+      /남성키|여성키/ig,
+      /원키|낮은키|높은키/ig
+    ];
+    patterns.forEach(r=>{ t = t.replace(r,' '); });
+    // “(Inst)” 같이 괄호로 남은 꼬리 제거
+    t = stripBrackets(t);
+    // “Acoustic / Piano / MR” 등 꼬리표 흔한 것 정리
+    t = t.replace(/\b(acoustic|piano|band|mr|inst)\b/ig,' ');
+    return t.replace(/\s{2,}/g,' ').trim();
+  }
+
+  // 제목에서 “노래제목 - 가수” 패턴 추정
+  function guessTitleArtistFromTitle(title){
+    const cleaned = removeInstTokens(stripBrackets(title));
+    const parts = cleaned.split(' - ').map(s=>s.trim()).filter(Boolean);
+    if (parts.length >= 2) {
+      const artist = parts[parts.length-1];
+      const song   = parts.slice(0, parts.length-1).join(' - ');
+      return { song, artist };
+    }
+    return { song: cleaned, artist: '' };
+  }
 
   /* -------------------- LRCLIB: 가사 -------------------- */
   async function fetchLyrics(artist, title) {
@@ -317,47 +351,12 @@
     out.sort((a,b)=>a.t-b.t);
     return { timed:true, lines:out };
   }
-  function formatLyricsPreview(prev, cur, next, gem){ // HTML
+  function formatLyricsPreview(prev, cur, next){
     let html = '';
     if(prev) html += `<div class="lyric-line prev-line text-white/80 text-sm">${escapeHtml(prev.s)}</div>`;
     if(cur)  html += `<div class="lyric-line current-line text-white text-sm">${escapeHtml(cur.s)}</div>`;
     if(next) html += `<div class="lyric-line next-line text-white/80 text-sm">${escapeHtml(next.s)}</div>`;
-    if(gem)  html += `<div class="gemini-line">${escapeHtml(gem.translation || '')}${gem.roman ? ` <span class="gemini-sub">/ ${escapeHtml(gem.roman)}</span>`:''}</div>`;
     return html;
-  }
-
-  /* -------------------- Gemini: 한 줄 가공 -------------------- */
-  // REST(Generate Content)로 호출: 줄 변경 시에만 1회 호출 (디바운스)
-  let lastGeminiReqId = 0;
-  async function processLineWithGemini(line){
-    if(!GEMINI_API_KEY || !line) return null;
-    const reqId = ++lastGeminiReqId;
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${encodeURIComponent(GEMINI_API_KEY)}`;
-    const prompt = `다음 가사 한 줄을 의미 유지하면서 짧게 한국어로 번역하고(최대 40자), 로마자 표기를 함께 제시해줘.
-- 가사 전체를 재생산하지 말고, 입력된 줄만 처리
-- 응답 JSON만 반환: {"translation":"...", "roman":"..."}
-가사: ${line}`;
-    try{
-      const res = await fetch(endpoint, {
-        method:'POST',
-        headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({
-          contents:[{ parts:[{ text: prompt }] }],
-          generationConfig:{ temperature:0.4, maxOutputTokens:120 }
-        })
-      });
-      const data = await res.json();
-      if (reqId !== lastGeminiReqId) return null; // 더 최신 요청이 있으면 폐기
-      const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      // JSON 파싱 시도
-      const m = text.match(/\{[\s\S]*\}/);
-      if(!m) return null;
-      const obj = JSON.parse(m[0]);
-      return { translation: obj.translation || '', roman: obj.roman || '' };
-    }catch(e){
-      console.warn('Gemini error', e);
-      return null;
-    }
   }
 
   /* -------------------- YouTube 검색 -------------------- */
@@ -420,7 +419,7 @@
   }
   function performSearch() {
     const q = searchInput.value.trim();
-    if (!q) { clearSearchUI(); return; }
+    if (!q) { clearSearchUI(); return; }   // 입력 비면 결과/상태 비움
     searchTracks(q);
   }
 
@@ -428,20 +427,17 @@
   let currentLyrics = { timed:false, lines:[] };
   let currentLineIndex = -1;
   let rafId = null;
-  let lastGemini = null;
 
   function startLyricsLoop(){
     stopLyricsLoop();
     if (!currentLyrics.lines.length) { lyricsBox.classList.add('hidden'); lyricsBox.innerHTML=''; return; }
     lyricsBox.classList.remove('hidden');
-    const loop = async () => {
+    const loop = () => {
       const t = youtubePlayer?.getCurrentTime ? youtubePlayer.getCurrentTime() : 0;
       let idx = 0;
       if (currentLyrics.timed) {
-        // 현재 시간과 가장 가까운 줄 찾기
         while (idx+1 < currentLyrics.lines.length && currentLyrics.lines[idx+1].t <= t + 0.05) idx++;
       } else {
-        // 타임스탬프 없으면 0번만 보여줌
         idx = 0;
       }
       if (idx !== currentLineIndex) {
@@ -449,14 +445,7 @@
         const prev = currentLyrics.lines[idx-1] || null;
         const cur  = currentLyrics.lines[idx]   || null;
         const next = currentLyrics.lines[idx+1] || null;
-        lyricsBox.innerHTML = formatLyricsPreview(prev, cur, next, lastGemini);
-
-        // Gemini 가공(한 줄만)
-        lastGemini = await processLineWithGemini(cur?.s || '');
-        // 최신 라인일 때만 반영
-        if (idx === currentLineIndex) {
-          lyricsBox.innerHTML = formatLyricsPreview(prev, cur, next, lastGemini);
-        }
+        lyricsBox.innerHTML = formatLyricsPreview(prev, cur, next);
       }
       rafId = requestAnimationFrame(loop);
     };
@@ -466,7 +455,6 @@
     if (rafId) cancelAnimationFrame(rafId);
     rafId = null;
     currentLineIndex = -1;
-    lastGemini = null;
   }
 
   /* -------------------- 플레이어 컨트롤 -------------------- */
@@ -479,13 +467,17 @@
     originalAlbumArtUrl = track.albumImage;
     if (!useUserCover) albumArtImg.src = track.albumImage;
 
+    // 상단 타이틀/채널 표시
     trackTitleSpan.textContent = track.name || '노래 제목';
-    const artistNames = (track.artists || []).map(a => a.name).join(', ');
-    trackArtistSpan.textContent = artistNames ? `- ${artistNames}` : '';
+    const channelArtist = stripTopic((track.artists || []).map(a => a.name).join(', '));
+    trackArtistSpan.textContent = channelArtist ? `- ${channelArtist}` : '';
 
-    // 가사 가져오기 + 싱크 시작
-    const artistForLyrics = stripTopic(artistNames || '');
-    const titleForLyrics  = stripBrackets(track.name || '');
+    // 🎯 INST/MR/노래방도 원곡 가사 찾기: 제목 기반으로 우선 추정
+    const { song: songFromTitle, artist: artistFromTitle } = guessTitleArtistFromTitle(track.name || '');
+    const artistForLyrics = artistFromTitle || channelArtist; // 제목이 더 신뢰되면 그쪽 우선
+    const titleForLyrics  = songFromTitle;
+
+    // 가사 가져오기 + 싱크 루프
     const raw = await fetchLyrics(artistForLyrics, titleForLyrics);
     currentLyrics = parseLRC(raw);
     startLyricsLoop();
@@ -582,13 +574,6 @@
     metaSize.addEventListener('input', e => { const size = `${e.target.value}px`;  metaSizeVal.textContent = size; setCssVar('--meta-size', size); });
     resetTextSize.addEventListener('click', () => { titleSize.value = 18; metaSize.value = 14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
 
-    // Gemini Key 저장
-    saveGeminiKey.addEventListener('click', () => {
-      const v = (geminiKeyInput.value || '').trim();
-      GEMINI_API_KEY = v;
-      if (v) localStorage.setItem('gemini_key', v); else localStorage.removeItem('gemini_key');
-    });
-
     // 초기값
     setLayout('horizontal');
     waveform = initWaveform(waveformCanvas);
@@ -601,5 +586,6 @@
   }
   initialize();
 </script>
+
 </body>
 </html>
