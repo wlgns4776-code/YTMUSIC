@@ -13,36 +13,30 @@
     }
     html, body { margin:0; padding:0; background:var(--bg-color); }
     body{font-family:'Noto Sans KR',sans-serif}
+
+    /* 레이아웃: 좌/중/우 3열 */
+    .app-grid{ display:grid; grid-template-columns: 300px 1fr 300px; gap:1rem; }
+    @media (max-width:1024px){ .app-grid{ grid-template-columns: 1fr; } }
+
     .card{ background:#fff; border-radius:20px; box-shadow:0 10px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04); }
+
+    /* 좌측 검색 패널 스크롤 */
+    .panel-scroll{ max-height: calc(100vh - 2rem); overflow:auto; }
     #searchResults::-webkit-scrollbar{width:8px}
     #searchResults::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb:hover{background:#A78BFA}
-    #player{ display:flex; flex-direction:column; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); width:100%; max-width:920px}
-    .player-top{ display:flex; width:100%; align-items:center; }
-    #player.layout-vertical .player-top{ flex-direction:column; align-items:center; }
-    #player.layout-horizontal .player-top{ flex-direction:row; }
+
+    /* 중앙 플레이어 */
+    #player{ display:flex; flex-direction:column; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); width:100%}
+    .player-top{ display:flex; width:100%; align-items:center; padding:1rem; }
     #player .album-art{width:5rem;height:5rem}
-    #player.layout-vertical .album-art{width:10rem;height:10rem}
     .text-glow{ text-shadow:0 1px 2px rgba(0,0,0,.25); }
     .title-text{ font-size:var(--title-size); line-height:1.2; }
     .meta-text{ font-size:var(--meta-size); }
-    #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
-    #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
-    #waveformCanvas{width:120px;height:40px}
-    @media (min-width:768px){ #waveformCanvas{width:140px;height:44px} }
-    #resultsWrap{ max-height: 50vh; overflow: auto; }
-    .player-buttons button { cursor: pointer; transition: transform 0.1s ease; }
-    .player-buttons button:active { transform: scale(0.9); }
 
-    /* 🎵 가사 */
-    #lyricsBox{ margin-top:.25rem }
-    .lyric-line{ line-height:1.2; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
-    .current-line{ font-weight:700; opacity:.98; }
-    .prev-line,.next-line{ opacity:.75; }
-
-    /* ⏳ 진행바 */
-    .progress-wrap{ width:100%; margin-top:.5rem; padding-top:.25rem; }
+    /* 진행바 */
+    .progress-wrap{ width:100%; padding: .25rem 1rem 1rem 1rem; }
     .progress-row{ display:flex; align-items:center; gap:.5rem; }
     .time-label{ font-size:.75rem; opacity:.9; min-width:2.5rem; text-align:center; }
     input[type="range"].progress{
@@ -51,31 +45,50 @@
     }
     input[type="range"].progress::-webkit-slider-thumb{
       -webkit-appearance:none; appearance:none; width:14px; height:14px;
-      border-radius:50%; background:#ffffff; box-shadow:0 0 0 2px rgba(0,0,0,.15);
-      cursor:pointer;
+      border-radius:50%; background:#ffffff; box-shadow:0 0 0 2px rgba(0,0,0,.15); cursor:pointer;
     }
     input[type="range"].progress::-moz-range-thumb{
       width:14px; height:14px; border:none; border-radius:50%; background:#ffffff; cursor:pointer;
     }
+
+    /* 가사 영역 */
+    #lyricsPanel{ padding:1rem; }
+    #lyricsBox{ margin-top:.25rem }
+    .lyric-line{ line-height:1.6; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); text-align:center; }
+    .current-line{ font-weight:700; opacity:.98; }
+    .prev-line,.next-line{ opacity:.75; }
+
+    /* 우측 모드 패널 */
+    .mode-badge{ font-size:.8rem; padding:.4rem .6rem; border-radius:.65rem; background:#f3f4f6; display:inline-flex; gap:.5rem; align-items:center; }
+    .muted{ opacity:.6 }
   </style>
 </head>
-<body class="flex justify-center min-h-screen pt-8">
-  <div class="w-full max-w-3xl mx-auto p-4">
-    <div class="mb-8 flex justify-center">
-      <div id="player" class="p-4 transition-all duration-500 ease-in-out layout-horizontal">
-        <!-- 상단 정보 + 컨트롤 -->
-        <div class="player-top w-full">
+<body class="min-h-screen p-4">
+  <div class="app-grid">
+    <!-- 좌측: 검색 패널 -->
+    <aside class="card p-4 panel-scroll">
+      <h3 class="font-bold mb-3">검색</h3>
+      <div class="flex w-full items-center gap-2 mb-3">
+        <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+        <button id="searchButton" class="shrink-0 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 active:scale-95">검색</button>
+      </div>
+      <div id="status" class="text-center text-gray-500 mb-2 h-6"></div>
+      <div id="searchResults" class="grid grid-cols-2 gap-3"></div>
+    </aside>
+
+    <!-- 중앙: 플레이어 + 가사 -->
+    <main>
+      <section id="player" class="mb-4">
+        <div class="player-top">
           <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
           <div class="flex-grow min-w-0 ml-4">
             <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
-              <span id="trackTitle" class="truncate max-w-[60vw] sm:max-w-[460px]">노래 제목</span>
+              <span id="trackTitle" class="truncate">노래 제목</span>
               <span id="trackArtist" class="opacity-90"></span>
             </h2>
             <div class="flex items-center opacity-90 text-glow meta-text">
               <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
             </div>
-            <!-- 가사 미리보기 -->
-            <div id="lyricsBox" class="mt-1 hidden"></div>
           </div>
           <div class="player-controls flex items-center mt-3 md:mt-0">
             <div class="player-buttons flex items-center space-x-2 text-2xl">
@@ -86,10 +99,10 @@
               </button>
               <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
             </div>
-            <canvas id="waveformCanvas" class="ml-4"></canvas>
           </div>
         </div>
-        <!-- ⏳ 하단 진행바 -->
+
+        <!-- 진행바 -->
         <div class="progress-wrap">
           <div class="progress-row">
             <span id="curTime" class="time-label">0:00</span>
@@ -97,569 +110,311 @@
             <span id="totalTime" class="time-label">0:00</span>
           </div>
         </div>
-      </div>
-    </div>
+      </section>
 
-    <!-- 검색 -->
-    <section class="card p-4 mb-4">
-      <div class="flex w-full items-center gap-2">
-        <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-        <button id="searchButton" class="shrink-0 bg-purple-600 text-white px-5 py-2 rounded-r-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-transform active:scale-95">검색</button>
-      </div>
-    </section>
+      <!-- 가사 패널 -->
+      <section id="lyricsPanel" class="card">
+        <h3 class="font-bold px-4">가사</h3>
+        <div id="lyricsBox" class="px-4 pb-5 text-gray-900"></div>
+      </section>
+    </main>
 
-    <div id="resultsWrap" class="card p-4">
-      <div id="status" class="text-center text-gray-500 mb-3 h-6"></div>
-      <section><div id="searchResults" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div></section>
-    </div>
+    <!-- 우측: 재생 모드 / 키 조절 -->
+    <aside class="card p-4 h-fit">
+      <h3 class="font-bold mb-3">재생 모드</h3>
+      <div class="space-y-4">
+        <div class="mode-badge">🎧 일반 모드 <span class="text-gray-400">|</span> 노래방</div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">키 조절 (반음)</label>
+          <input id="keyShift" type="range" min="-6" max="6" step="1" value="0" class="w-full">
+          <div class="flex justify-between text-xs text-gray-500 mt-1">
+            <span>-6</span><span id="keyShiftLabel">0</span><span>+6</span>
+          </div>
+          <p id="keyShiftHelp" class="text-xs text-gray-500 mt-2"></p>
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">재생 속도</label>
+          <input id="playbackRate" type="range" min="0.5" max="2" step="0.05" value="1" class="w-full">
+          <div class="flex justify-between text-xs text-gray-500"><span>0.5x</span><span id="rateLabel">1.00x</span><span>2x</span></div>
+        </div>
+      </div>
+    </aside>
   </div>
 
-  <!-- 설정 패널 (Gemini UI 없음) -->
-  <div class="fixed bottom-6 right-6 z-50">
-    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
-
-    <div id="settingsPanel" class="card absolute bottom-20 right-0 w-80 bg-white p-6 rounded-2xl shadow-2xl origin-bottom-right space-y-6">
-      <div>
-        <label class="block text-sm font-medium text-gray-700">표시 채널명</label>
-        <div class="mt-1 flex items-center gap-2">
-          <input id="displayNameInput" type="text" placeholder="채널명을 입력하세요" class="flex-1 min-w-0 h-10 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
-          <button id="applyDisplayName" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">커버 이미지 업로드</label>
-        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
-          <label class="cursor-pointer h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600 inline-flex items-center">
-            <span>이미지 업로드</span>
-            <input id="imageUpload" type="file" class="hidden" accept="image/*">
-          </label>
-          <button id="revertCover" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">원래 썸네일</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">카드 색상</label>
-        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
-          <input id="primaryColor" type="color" value="#A855F7" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
-          <input id="secondaryColor" type="color" value="#7C3AED" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
-          <button id="applyColors" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
-          <button id="resetColors" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">배경 색상</label>
-        <div class="mt-2 flex items-center gap-2">
-          <input id="bgColor" type="color" value="#ffffff" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
-          <button id="applyBg" class="h-10 px-4 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
-          <button id="resetBg" class="h-10 px-4 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">카드 레이아웃</label>
-        <div class="mt-2 flex flex-row items-center gap-2">
-          <button id="layoutHorizontalBtn" class="h-10 px-4 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600">가로형</button>
-          <button id="layoutVerticalBtn" class="h-10 px-4 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">세로형</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">볼륨 조절</label>
-        <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>🔊</span><span id="volumeVal">100%</span></div>
-        <input id="volumeSlider" type="range" min="0" max="100" step="1" value="100" class="w-full">
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">파형 속도</label>
-        <input id="speedInput" type="range" min="0.4" max="2" step="0.05" value="1" class="w-full">
-        <div class="flex justify-between text-xs text-gray-500"><span>느리게</span><span id="speedVal">1.00x</span><span>빠르게</span></div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">텍스트 크기</label>
-        <div class="mt-2 space-y-3">
-          <div>
-            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>제목 크기</span><span id="titleSizeVal">18px</span></div>
-            <input id="titleSize" type="range" min="14" max="36" step="1" value="18" class="w-full">
-          </div>
-          <div>
-            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>정보 크기 (가수/채널)</span><span id="metaSizeVal">14px</span></div>
-            <input id="metaSize" type="range" min="10" max="24" step="1" value="14" class="w-full">
-          </div>
-          <button id="resetTextSize" class="h-9 px-3 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="youtube-player-container" style="position: absolute; top: -9999px; left: -9999px;"></div>
+  <div id="youtube-player-container" style="position:absolute; top:-9999px; left:-9999px;"></div>
 
 <script>
-  /* -------------------- DOM & 전역 변수 -------------------- */
-  const playerDiv = document.getElementById('player');
+  /* -------------------- DOM refs -------------------- */
+  const searchInput = document.getElementById('searchInput');
+  const searchButton = document.getElementById('searchButton');
+  const searchResultsContainer = document.getElementById('searchResults');
+  const statusDiv = document.getElementById('status');
+
   const albumArtImg = document.getElementById('albumArt');
   const trackTitleSpan = document.getElementById('trackTitle');
   const trackArtistSpan = document.getElementById('trackArtist');
   const artistNameP = document.getElementById('artistName');
-  const lyricsBox = document.getElementById('lyricsBox');
-  const waveformCanvas = document.getElementById('waveformCanvas');
-  const searchInput = document.getElementById('searchInput');
-  const searchButton = document.getElementById('searchButton');
-  const statusDiv = document.getElementById('status');
-  const searchResultsContainer = document.getElementById('searchResults');
-  const settingsIconBtn = document.getElementById('settingsIconBtn');
-  const settingsPanel = document.getElementById('settingsPanel');
-  const displayNameInput = document.getElementById('displayNameInput');
-  const applyDisplayName = document.getElementById('applyDisplayName');
-  const imageUpload = document.getElementById('imageUpload');
-  const revertCover = document.getElementById('revertCover');
-  const primaryColor = document.getElementById('primaryColor');
-  const secondaryColor = document.getElementById('secondaryColor');
-  const applyColors = document.getElementById('applyColors');
-  const resetColors = document.getElementById('resetColors');
-  const bgColor = document.getElementById('bgColor');
-  const applyBg = document.getElementById('applyBg');
-  const resetBg = document.getElementById('resetBg');
-  const layoutHorizontalBtn = document.getElementById('layoutHorizontalBtn');
-  const layoutVerticalBtn = document.getElementById('layoutVerticalBtn');
-  const volumeSlider = document.getElementById('volumeSlider');
-  const volumeVal = document.getElementById('volumeVal');
-  const speedInput = document.getElementById('speedInput');
-  const speedVal = document.getElementById('speedVal');
-  const titleSize = document.getElementById('titleSize');
-  const metaSize = document.getElementById('metaSize');
-  const titleSizeVal = document.getElementById('titleSizeVal');
-  const metaSizeVal = document.getElementById('metaSizeVal');
-  const resetTextSize = document.getElementById('resetTextSize');
+
+  const progressBar = document.getElementById('progressBar');
+  const curTimeEl = document.getElementById('curTime');
+  const totalTimeEl = document.getElementById('totalTime');
+
   const playPauseBtn = document.getElementById('playPauseBtn');
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
   const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
-  const curTimeEl = document.getElementById('curTime');
-  const totalTimeEl = document.getElementById('totalTime');
-  const progressBar = document.getElementById('progressBar');
+
+  const keyShift = document.getElementById('keyShift');
+  const keyShiftLabel = document.getElementById('keyShiftLabel');
+  const keyShiftHelp = document.getElementById('keyShiftHelp');
+  const playbackRate = document.getElementById('playbackRate');
+  const rateLabel = document.getElementById('rateLabel');
+
+  const lyricsBox = document.getElementById('lyricsBox');
+
+  /* -------------------- Player state -------------------- */
+  let youtubePlayer, isPlaying=false, currentPlaylist=[], currentTrackIndex=-1;
+  let progressRaf = null, seeking=false;
+
   const PLACEHOLDER = albumArtImg.src;
+  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
 
-  let originalAlbumArtUrl = PLACEHOLDER;
-  let userCoverUrl = null;
-  let useUserCover = false;
-  let youtubePlayer;
-  let currentPlaylist = [];
-  let currentTrackIndex = -1;
-  let isPlaying = false;
-  let waveform;
-  let progressRaf = null;
-  let userSeeking = false;
+  /* -------------------- YouTube IFrame API -------------------- */
+  const tag = document.createElement('script'); tag.src="https://www.youtube.com/iframe_api";
+  document.head.appendChild(tag);
 
-  /* -------------------- YouTube IFrame Player API -------------------- */
-  const tag = document.createElement('script');
-  tag.src = "https://www.youtube.com/iframe_api";
-  const firstScriptTag = document.getElementsByTagName('script')[0];
-  firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
-
-  function onYouTubeIframeAPIReady() {
-    youtubePlayer = new YT.Player('youtube-player-container', {
-      height: '0', width: '0',
-      playerVars: { 'autoplay': 0, 'controls': 0, 'rel': 0, 'showinfo': 0 },
-      events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
+  function onYouTubeIframeAPIReady(){
+    youtubePlayer = new YT.Player('youtube-player-container',{
+      height:'0',width:'0', playerVars:{autoplay:0,controls:0,rel:0,showinfo:0},
+      events:{ onReady:onReady, onStateChange:onState }
     });
   }
-  function onPlayerReady(event) { event.target.setVolume(volumeSlider.value); updateDurationLabels(); }
-  function onPlayerStateChange(event) {
-    isPlaying = (event.data === YT.PlayerState.PLAYING);
+  function onReady(e){
+    e.target.setVolume(100);
+    keyShiftHelp.textContent = 'YouTube 소스는 브라우저에서 오디오 스트림을 가공할 수 없어 키 조절이 비활성화됩니다.';
+    keyShift.disabled = true;
+    playbackRate.addEventListener('input', () => {
+      rateLabel.textContent = `${parseFloat(playbackRate.value).toFixed(2)}x`;
+      youtubePlayer && youtubePlayer.setPlaybackRate && youtubePlayer.setPlaybackRate(parseFloat(playbackRate.value));
+    });
+  }
+  function onState(evt){
+    isPlaying = (evt.data === YT.PlayerState.PLAYING);
     playIcon.classList.toggle('hidden', isPlaying);
     pauseIcon.classList.toggle('hidden', !isPlaying);
-    if (event.data === YT.PlayerState.ENDED) { playNext(); }
+    if (evt.data === YT.PlayerState.ENDED) playNext();
     startProgressLoop();
   }
 
-  /* -------------------- 유틸 -------------------- */
-  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns'; // 필요 시 교체
-  function setCssVar(name, value) { document.documentElement.style.setProperty(name, value); }
-  function setLayout(mode) {
-    playerDiv.classList.toggle('layout-horizontal', mode === 'horizontal');
-    playerDiv.classList.toggle('layout-vertical', mode === 'vertical');
-    const top = playerDiv.querySelector('.player-top');
-    if (mode === 'vertical') top.classList.add('flex-col'); else top.classList.remove('flex-col');
-    layoutHorizontalBtn.classList.toggle('bg-purple-500', mode === 'horizontal');
-    layoutHorizontalBtn.classList.toggle('text-white', mode === 'horizontal');
-    layoutHorizontalBtn.classList.toggle('bg-gray-200', mode === 'vertical');
-    layoutHorizontalBtn.classList.toggle('text-gray-700', mode === 'vertical');
-    layoutVerticalBtn.classList.toggle('bg-purple-500', mode === 'vertical');
-    layoutVerticalBtn.classList.toggle('text-white', mode === 'vertical');
-    layoutVerticalBtn.classList.toggle('bg-gray-200', mode === 'horizontal');
-    layoutVerticalBtn.classList.toggle('text-gray-700', mode === 'horizontal');
+  /* -------------------- Utils -------------------- */
+  function fmt(sec){ if(!isFinite(sec)||sec<0) return '0:00'; sec=Math.floor(sec); const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
+
+  function startProgressLoop(){
+    if (progressRaf) cancelAnimationFrame(progressRaf);
+    const loop = ()=>{
+      const d=youtubePlayer?.getDuration?youtubePlayer.getDuration():0;
+      totalTimeEl.textContent=fmt(d||0); progressBar.max=d||0;
+      if (!seeking){
+        const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
+        curTimeEl.textContent=fmt(t||0); progressBar.value=t||0;
+      }
+      progressRaf=requestAnimationFrame(loop);
+    };
+    progressRaf=requestAnimationFrame(loop);
   }
+  progressBar.addEventListener('input',()=>{ seeking=true; curTimeEl.textContent=fmt(parseFloat(progressBar.value)||0); });
+  const endSeek=()=>{ const t=parseFloat(progressBar.value)||0; youtubePlayer?.seekTo && youtubePlayer.seekTo(t,true); seeking=false; };
+  progressBar.addEventListener('change',endSeek);
+  progressBar.addEventListener('pointerup',endSeek);
+  progressBar.addEventListener('touchend',endSeek);
+
+  /* -------------------- Search (Left) -------------------- */
+  function clearResults(){ searchResultsContainer.innerHTML=''; }
+  function clearSearchUI(){ statusDiv.textContent=''; clearResults(); }
+  async function searchYoutube(q){
+    if(!YOUTUBE_API_KEY) return [];
+    const url=`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&key=${encodeURIComponent(YOUTUBE_API_KEY)}&type=video&maxResults=24&videoCategoryId=10`;
+    try{
+      const r=await fetch(url); const data=await r.json();
+      if(!r.ok) { statusDiv.textContent = (data.error && data.error.message) ? data.error.message : 'API 오류'; return []; }
+      return (data.items||[]).map(item=>({
+        videoId:item.id.videoId,
+        name:item.snippet.title,
+        artists:[{name:item.snippet.channelTitle}],
+        albumImage:item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || PLACEHOLDER
+      }));
+    }catch(e){ statusDiv.textContent='네트워크 오류'; return []; }
+  }
+  function displayResults(tracks){
+    clearResults();
+    if(!tracks.length){ if(statusDiv.textContent==='YouTube 검색 중...') statusDiv.textContent='검색 결과가 없습니다.'; return; }
+    statusDiv.textContent='';
+    currentPlaylist=tracks;
+    tracks.forEach((t,i)=>{
+      const card=document.createElement('div');
+      card.className='bg-white rounded-xl p-2 cursor-pointer hover:shadow-lg transition-shadow';
+      const artist=(t.artists||[]).map(a=>a.name).join(', ');
+      card.innerHTML=`
+        <img src="${t.albumImage}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
+        <div class="mt-1">
+          <p class="font-bold text-gray-900 truncate text-sm">${t.name}</p>
+          <p class="text-xs text-gray-600 truncate">${artist}</p>
+        </div>`;
+      card.addEventListener('click',()=>playTrack(i));
+      searchResultsContainer.appendChild(card);
+    });
+  }
+  async function searchTracks(q){
+    statusDiv.textContent='YouTube 검색 중...'; clearResults();
+    const list=await searchYoutube(q); displayResults(list);
+  }
+  function performSearch(){
+    const q=searchInput.value.trim();
+    if(!q){ clearSearchUI(); return; }
+    searchTracks(q);
+  }
+  searchButton.addEventListener('click', performSearch);
+  searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
+  searchInput.addEventListener('input', ()=>{ if(!searchInput.value.trim()) clearSearchUI(); });
+
+  /* -------------------- Lyrics (LRCLIB) -------------------- */
   const stripTopic = s => s?.replace(/\s*-\s*Topic$/i,'').trim();
   const stripBrackets = s => s?.replace(/\s*[\(\[][^)\]]*[\)\]]\s*/g,' ').replace(/\s{2,}/g,' ').trim();
   const escapeHtml = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-
   function containsInstTokens(title){
     return /(inst(?:rumental)?|mr|노래방|가라오케|karaoke|伴奏|반주|minus\s*one|official\s*instrumental|acoustic\s*mr)/i.test(title) ||
            /[+\-]?\d+\s*key/i.test(title) || /(남자키|여자키|남성키|여성키|원키|낮은키|높은키)/i.test(title);
   }
   function removeInstTokens(title){
-    let t = title;
-    const patterns = [
-      /\binst(?:rumental)?\b/ig, /\binstrumental\b/ig, /\bver\.?\b/ig,
-      /\bmr\b/ig, /노래방|가라오케|伴奏|반주|karaoke/ig, /tj\s*노래방/ig,
-      /official\s*instrumental/ig, /\bminus\s*one\b/ig,
-      /[+\-]?\d+\s*key/ig, /\bkey\s*[+\-]?\d+\b/ig,
-      /남자키|여자키|남키|여키|남Key|여Key|남성키|여성키|원키|낮은키|높은키/ig,
-      /\bacoustic\s*mr\b/ig
-    ];
-    patterns.forEach(r=>{ t = t.replace(r,' '); });
-    t = stripBrackets(t);
-    t = t.replace(/\b(acoustic|piano|band|mr|inst)\b/ig,' ');
+    let t=title;
+    [/\binst(?:rumental)?\b/ig,/\binstrumental\b/ig,/\bver\.?\b/ig,
+     /\bmr\b/ig,/노래방|가라오케|伴奏|반주|karaoke/ig,/tj\s*노래방/ig,
+     /official\s*instrumental/ig,/\bminus\s*one\b/ig,
+     /[+\-]?\d+\s*key/ig,/\bkey\s*[+\-]?\d+\b/ig,
+     /남자키|여자키|남키|여키|남Key|여Key|남성키|여성키|원키|낮은키|높은키/ig,
+     /\bacoustic\s*mr\b/ig].forEach(r=>t=t.replace(r,' '));
+    t=stripBrackets(t); t=t.replace(/\b(acoustic|piano|band|mr|inst)\b/ig,' ');
     return t.replace(/\s{2,}/g,' ').trim();
   }
   function guessTitleArtistFromTitle(title, channelArtist){
-    const cleaned = stripBrackets(title);
-    const parts = cleaned.split(' - ').map(s=>s.trim()).filter(Boolean);
-    if (parts.length >= 2) {
-      const left = parts[0];
-      const right = parts.slice(1).join(' - ');
-      const leftHas = containsInstTokens(left);
-      const rightHas = containsInstTokens(right);
-      if (rightHas && !leftHas) return { song: removeInstTokens(right), artist: stripTopic(left) };
-      if (leftHas && !rightHas)   return { song: removeInstTokens(left),  artist: stripTopic(right) };
-      if (channelArtist){
-        const ca = channelArtist.toLowerCase();
-        if (left.toLowerCase().includes(ca))  return { song: removeInstTokens(right), artist: stripTopic(left) };
-        if (right.toLowerCase().includes(ca)) return { song: removeInstTokens(left),  artist: stripTopic(right) };
+    const cleaned=stripBrackets(title);
+    const parts=cleaned.split(' - ').map(s=>s.trim()).filter(Boolean);
+    if(parts.length>=2){
+      const left=parts[0], right=parts.slice(1).join(' - ');
+      const leftHas=containsInstTokens(left), rightHas=containsInstTokens(right);
+      if(rightHas && !leftHas) return { song: removeInstTokens(right), artist: stripTopic(left) };
+      if(leftHas && !rightHas) return { song: removeInstTokens(left),  artist: stripTopic(right) };
+      if(channelArtist){
+        const ca=channelArtist.toLowerCase();
+        if(left.toLowerCase().includes(ca))  return { song: removeInstTokens(right), artist: stripTopic(left) };
+        if(right.toLowerCase().includes(ca)) return { song: removeInstTokens(left),  artist: stripTopic(right) };
       }
       return { song: removeInstTokens(left), artist: stripTopic(right) };
     }
     return { song: removeInstTokens(cleaned), artist: '' };
   }
-
-  /* -------------------- LRCLIB -------------------- */
   async function tryGet(track, artist){
-    try{
-      const res = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
-      if (res.ok) { const d = await res.json(); return d.syncedLyrics || d.plainLyrics || ''; }
-    }catch(e){}
-    return '';
+    try{ const r=await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
+      if(r.ok){ const d=await r.json(); return d.syncedLyrics||d.plainLyrics||''; }
+    }catch(e){} return '';
   }
   async function trySearch(track, artist){
-    try{
-      const res = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}&limit=1`);
-      if (res.ok) { const arr = await res.json(); if (arr.length) return arr[0].syncedLyrics || arr[0].plainLyrics || ''; }
-    }catch(e){}
-    return '';
+    try{ const r=await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}&limit=1`);
+      if(r.ok){ const a=await r.json(); if(a.length) return a[0].syncedLyrics||a[0].plainLyrics||''; }
+    }catch(e){} return '';
   }
   async function trySearchTitleOnly(track){
-    try{
-      const res = await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&limit=1`);
-      if (res.ok) { const arr = await res.json(); if (arr.length) return arr[0].syncedLyrics || arr[0].plainLyrics || ''; }
-    }catch(e){}
+    try{ const r=await fetch(`https://lrclib.net/api/search?track_name=${encodeURIComponent(track)}&limit=1`);
+      if(r.ok){ const a=await r.json(); if(a.length) return a[0].syncedLyrics||a[0].plainLyrics||''; }
+    }catch(e){} return '';
+  }
+  async function fetchLyricsSmart(artist,title){
+    let t=await tryGet(title,artist); if(t) return t;
+    t=await trySearch(title,artist); if(t) return t;
+    t=await tryGet(artist,title); if(t) return t;
+    t=await trySearch(artist,title); if(t) return t;
+    t=await trySearchTitleOnly(title); if(t) return t;
     return '';
   }
-  async function fetchLyricsSmart(artist, title){
-    let txt = await tryGet(title, artist); if (txt) return txt;
-    txt = await trySearch(title, artist); if (txt) return txt;
-    txt = await tryGet(artist, title); if (txt) return txt;
-    txt = await trySearch(artist, title); if (txt) return txt;
-    txt = await trySearchTitleOnly(title); if (txt) return txt;
-    return '';
-  }
-
   function parseLRC(text){
-    if(!text) return {timed:false, lines:[]};
-    const hasTime = /\[[0-9]{1,2}:[0-9]{2}(?:\.[0-9]{1,3})?\]/.test(text);
-    if(!hasTime){
-      const lines = text.replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean).map(t=>({t:0, s:t}));
-      return { timed:false, lines };
+    if(!text) return {timed:false,lines:[]};
+    const has=/\[[0-9]{1,2}:[0-9]{2}(?:\.[0-9]{1,3})?\]/.test(text);
+    if(!has){
+      const lines=text.replace(/\r/g,'').split('\n').map(s=>s.trim()).filter(Boolean).map(s=>({t:0,s}));
+      return {timed:false,lines};
     }
     const out=[];
     text.replace(/\r/g,'').split('\n').forEach(line=>{
-      const matches=[...line.matchAll(/\[([0-9]{1,2}):([0-9]{2})(?:\.([0-9]{1,3}))?\]/g)];
-      const lyric=line.replace(/\[[^\]]+\]/g,'').trim();
-      if(!lyric || matches.length===0) return;
-      matches.forEach(m=>{
-        const mm=parseInt(m[1],10)||0;
-        const ss=parseInt(m[2],10)||0;
-        const ms=parseInt(m[3]||'0',10)||0;
-        const t=mm*60 + ss + ms/1000;
-        out.push({ t, s:lyric });
-      });
+      const ms=[...line.matchAll(/\[([0-9]{1,2}):([0-9]{2})(?:\.([0-9]{1,3}))?\]/g)];
+      const lyric=line.replace(/\[[^\]]+\]/g,'').trim(); if(!lyric||!ms.length) return;
+      ms.forEach(m=>{ const t=(+m[1])*60+(+m[2])+((+m[3]||0)/1000); out.push({t,s:lyric}); });
     });
-    out.sort((a,b)=>a.t-b.t);
-    return { timed:true, lines:out };
+    out.sort((a,b)=>a.t-b.t); return {timed:true,lines:out};
   }
-  function formatLyricsPreview(prev, cur, next){
-    let html = '';
-    if(prev) html += `<div class="lyric-line prev-line text-white/80 text-sm">${escapeHtml(prev.s)}</div>`;
-    if(cur)  html += `<div class="lyric-line current-line text-white text-sm">${escapeHtml(cur.s)}</div>`;
-    if(next) html += `<div class="lyric-line next-line text-white/80 text-sm">${escapeHtml(next.s)}</div>`;
+  function formatLyrics(prev,cur,next){
+    let html=''; if(prev) html+=`<div class="lyric-line prev-line">${escapeHtml(prev.s)}</div>`;
+    if(cur) html+=`<div class="lyric-line current-line">${escapeHtml(cur.s)}</div>`;
+    if(next) html+=`<div class="lyric-line next-line">${escapeHtml(next.s)}</div>`;
     return html;
   }
-
-  /* -------------------- YouTube 검색 -------------------- */
-  async function searchYoutube(q) {
-    if (!YOUTUBE_API_KEY || !String(YOUTUBE_API_KEY).trim()) { statusDiv.textContent=''; return []; }
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&key=${encodeURIComponent(YOUTUBE_API_KEY)}&type=video&maxResults=24&videoCategoryId=10`;
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) {
-        const msg = (data && data.error && data.error.message) ? data.error.message : 'API Error';
-        statusDiv.textContent = `검색 오류: ${msg}`;
-        return [];
-      }
-      return (data.items || []).map(item => ({
-        videoId: item.id.videoId,
-        name: item.snippet.title,
-        artists: [{ name: item.snippet.channelTitle }],
-        albumImage: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || PLACEHOLDER
-      }));
-    } catch (error) {
-      console.error('Search Error:', error);
-      statusDiv.textContent = '네트워크 오류';
-      return [];
-    }
-  }
-
-  /* -------------------- 검색 & 결과 표시 -------------------- */
-  function clearResults() { searchResultsContainer.innerHTML = ''; }
-  function clearSearchUI() { statusDiv.textContent = ''; clearResults(); }
-  function displayResults(tracks) {
-    clearResults();
-    if (!tracks || tracks.length === 0) {
-      if (statusDiv.textContent === 'YouTube 검색 중...') statusDiv.textContent = '검색 결과가 없습니다.';
-      return;
-    }
-    statusDiv.textContent = '';
-    currentPlaylist = tracks;
-    tracks.forEach((track, index) => {
-      const card = document.createElement('div');
-      card.className = 'bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
-      const artistNames = (track.artists || []).map(a => a.name).join(', ');
-      card.innerHTML = `
-        <div class="relative">
-          <img src="${track.albumImage}" alt="${track.name}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
-        </div>
-        <div class="mt-2 text-center">
-          <p class="font-bold text-gray-900 truncate text-sm">${track.name}</p>
-          <p class="text-xs text-gray-600 truncate">${artistNames}</p>
-        </div>`;
-      card.addEventListener('click', () => { playTrack(index); });
-      searchResultsContainer.appendChild(card);
-    });
-  }
-  async function searchTracks(q) {
-    statusDiv.textContent = 'YouTube 검색 중...';
-    clearResults();
-    const list = await searchYoutube(q);
-    displayResults(list);
-  }
-  function performSearch() {
-    const q = searchInput.value.trim();
-    if (!q) { clearSearchUI(); return; }
-    searchTracks(q);
-  }
-
-  /* -------------------- 진행바 로직 -------------------- */
-  function fmt(sec){
-    if (!isFinite(sec) || sec < 0) return '0:00';
-    sec = Math.floor(sec);
-    const m = Math.floor(sec/60), s = sec%60;
-    return `${m}:${String(s).padStart(2,'0')}`;
-  }
-  function updateDurationLabels(){
-    const d = youtubePlayer?.getDuration ? youtubePlayer.getDuration() : 0;
-    progressBar.max = isFinite(d) && d>0 ? d : 0;
-    totalTimeEl.textContent = fmt(d||0);
-  }
-  function startProgressLoop(){
-    if (progressRaf) cancelAnimationFrame(progressRaf);
-    const loop = () => {
-      updateDurationLabels();
-      if (youtubePlayer?.getCurrentTime && !userSeeking){
-        const t = youtubePlayer.getCurrentTime();
-        progressBar.value = t || 0;
-        curTimeEl.textContent = fmt(t||0);
-      }
-      progressRaf = requestAnimationFrame(loop);
-    };
-    progressRaf = requestAnimationFrame(loop);
-  }
-  progressBar.addEventListener('input', () => { userSeeking = true; curTimeEl.textContent = fmt(parseFloat(progressBar.value)||0); });
-  const endSeek = () => {
-    const t = parseFloat(progressBar.value)||0;
-    if (youtubePlayer?.seekTo) youtubePlayer.seekTo(t, true);
-    userSeeking = false;
-  };
-  progressBar.addEventListener('change', endSeek);
-  progressBar.addEventListener('pointerup', endSeek);
-  progressBar.addEventListener('touchend', endSeek);
-
-  /* -------------------- 가사 싱크 루프 -------------------- */
-  let currentLyrics = { timed:false, lines:[] };
-  let currentLineIndex = -1;
-  let rafId = null;
-
+  let currentLyrics={timed:false,lines:[]}, lyricIdx=-1, lyricRaf=null;
   function startLyricsLoop(){
     stopLyricsLoop();
-    if (!currentLyrics.lines.length) { lyricsBox.classList.add('hidden'); lyricsBox.innerHTML=''; return; }
-    lyricsBox.classList.remove('hidden');
-    const loop = () => {
-      const t = youtubePlayer?.getCurrentTime ? youtubePlayer.getCurrentTime() : 0;
-      let idx = 0;
-      if (currentLyrics.timed) {
-        while (idx+1 < currentLyrics.lines.length && currentLyrics.lines[idx+1].t <= t + 0.05) idx++;
-      } else { idx = 0; }
-      if (idx !== currentLineIndex) {
-        currentLineIndex = idx;
-        const prev = currentLyrics.lines[idx-1] || null;
-        const cur  = currentLyrics.lines[idx]   || null;
-        const next = currentLyrics.lines[idx+1] || null;
-        lyricsBox.innerHTML = formatLyricsPreview(prev, cur, next);
+    if(!currentLyrics.lines.length){ lyricsBox.innerHTML='<p class="text-center text-gray-400">가사를 찾지 못했습니다.</p>'; return; }
+    const loop=()=>{
+      const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
+      let idx=0;
+      if(currentLyrics.timed){ while(idx+1<currentLyrics.lines.length && currentLyrics.lines[idx+1].t<=t+0.05) idx++; }
+      if(idx!==lyricIdx){
+        lyricIdx=idx;
+        const p=currentLyrics.lines[idx-1]||null, c=currentLyrics.lines[idx]||null, n=currentLyrics.lines[idx+1]||null;
+        lyricsBox.innerHTML=formatLyrics(p,c,n);
       }
-      rafId = requestAnimationFrame(loop);
+      lyricRaf=requestAnimationFrame(loop);
     };
-    rafId = requestAnimationFrame(loop);
+    lyricRaf=requestAnimationFrame(loop);
   }
-  function stopLyricsLoop(){
-    if (rafId) cancelAnimationFrame(rafId);
-    rafId = null;
-    currentLineIndex = -1;
-  }
+  function stopLyricsLoop(){ if(lyricRaf) cancelAnimationFrame(lyricRaf); lyricRaf=null; lyricIdx=-1; }
 
-  /* -------------------- 플레이어 컨트롤 -------------------- */
-  async function playTrack(index) {
-    if (index < 0 || index >= currentPlaylist.length) return;
-    currentTrackIndex = index;
-    const track = currentPlaylist[currentTrackIndex];
+  /* -------------------- Playback -------------------- */
+  async function playTrack(i){
+    if(i<0 || i>=currentPlaylist.length) return;
+    currentTrackIndex=i;
+    const t=currentPlaylist[i];
 
-    youtubePlayer.loadVideoById(track.videoId);
-    originalAlbumArtUrl = track.albumImage;
-    if (!useUserCover) albumArtImg.src = track.albumImage;
+    youtubePlayer.loadVideoById(t.videoId);
+    albumArtImg.src=t.albumImage||PLACEHOLDER;
+    trackTitleSpan.textContent=t.name||'노래 제목';
+    const channelArtist=(t.artists||[]).map(a=>a.name).join(', ');
+    trackArtistSpan.textContent=channelArtist?`- ${channelArtist}`:'';
+    artistNameP.textContent='채널명';
 
-    trackTitleSpan.textContent = track.name || '노래 제목';
-    const channelArtist = stripTopic((track.artists || []).map(a => a.name).join(', '));
-    trackArtistSpan.textContent = channelArtist ? `- ${channelArtist}` : '';
+    // 키조절(YouTube 비활성 안내 유지)
+    keyShift.value=0; keyShiftLabel.textContent='0';
 
-    const guess = guessTitleArtistFromTitle(track.name || '', channelArtist);
-    const artistForLyrics = guess.artist || channelArtist;
-    const titleForLyrics  = guess.song;
-
-    const raw = await fetchLyricsSmart(artistForLyrics, titleForLyrics);
-    currentLyrics = parseLRC(raw);
+    // 가사
+    const guess=guessTitleArtistFromTitle(t.name||'', channelArtist.replace(/\s*-\s*Topic$/i,''));
+    const raw=await fetchLyricsSmart(guess.artist||channelArtist, guess.song);
+    currentLyrics=parseLRC(raw);
     startLyricsLoop();
 
     // 진행바 초기화
-    progressBar.value = 0;
-    curTimeEl.textContent = '0:00';
-    updateDurationLabels();
-    startProgressLoop();
+    progressBar.value=0; curTimeEl.textContent='0:00'; totalTimeEl.textContent='0:00';
   }
-  function togglePlayPause() {
-    if (!youtubePlayer || currentTrackIndex === -1) return;
-    isPlaying ? youtubePlayer.pauseVideo() : youtubePlayer.playVideo();
-  }
-  function playNext() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex + 1) % currentPlaylist.length); }
-  function playPrev() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length); }
+  function togglePlayPause(){ if(!youtubePlayer||currentTrackIndex===-1) return; isPlaying?youtubePlayer.pauseVideo():youtubePlayer.playVideo(); }
+  function playNext(){ if(currentPlaylist.length) playTrack((currentTrackIndex+1)%currentPlaylist.length); }
+  function playPrev(){ if(currentPlaylist.length) playTrack((currentTrackIndex-1+currentPlaylist.length)%currentPlaylist.length); }
 
-  /* -------------------- 파형 -------------------- */
-  function initWaveform(canvas, options = {}) {
-    if (!canvas) return;
-    const cfg = { barCount:18,gap:3,smoothing:0.08,baseSpeedHz:0.6,rippleSpeedHz:1.2,baseWeight:0.75,rippleWeight:0.25,minRatio:0.25,maxRatio:0.85,fillStyle:'rgba(255,255,255,0.88)',glowBlur:6,glowColor:'rgba(255,255,255,0.35)', ...options };
-    const dpr = Math.max(1, window.devicePixelRatio || 1);
-    const ctx = canvas.getContext('2d');
-    let prevHeights=new Array(cfg.barCount).fill(0);
-    let lastW=0,lastH=0, startedAt=null;
-    const easeCos=t=>0.5*(1-Math.cos(Math.PI*2*t));
-    function resizeIfNeeded(){
-      const cssW=canvas.clientWidth||120, cssH=canvas.clientHeight||40;
-      if(cssW!==lastW||cssH!==lastH){ lastW=cssW; lastH=cssH; canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
-    }
-    function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,w*.5,h*.5); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr); ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h); ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr); ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath(); }
-    function render(ts){
-      if(!startedAt) startedAt=ts; const t=(ts-startedAt)/1000;
-      resizeIfNeeded(); const W=canvas.clientWidth, H=canvas.clientHeight;
-      ctx.clearRect(0,0,W,H);
-      const barWidth=Math.max(2,(W-(cfg.barCount-1)*cfg.gap)/cfg.barCount);
-      ctx.shadowBlur=cfg.glowBlur; ctx.shadowColor=cfg.glowColor;
-      for(let i=0;i<cfg.barCount;i++){
-        const base=easeCos((t*cfg.baseSpeedHz + i*0.18)%1);
-        const ripple=easeCos((t*cfg.rippleSpeedHz + i*0.35)%1);
-        const mix=cfg.baseWeight*base + cfg.rippleWeight*ripple;
-        const ratio=cfg.minRatio + (cfg.maxRatio-cfg.minRatio)*mix;
-        const target=H*ratio; const h=prevHeights[i]+(target-prevHeights[i])*cfg.smoothing; prevHeights[i]=h;
-        const x=i*(barWidth+cfg.gap), y=H-h, r=Math.min(3,barWidth*0.35);
-        roundRect(ctx,x,y,barWidth,h,r); ctx.fillStyle=cfg.fillStyle; ctx.fill();
-      }
-      ctx.shadowBlur=0; ctx.shadowColor='transparent';
-      requestAnimationFrame(render);
-    }
-    requestAnimationFrame(render);
-    return { setSpeed(mult){ mult=Math.max(0.1, Math.min(5, mult||1)); cfg.baseSpeedHz = 0.6 * mult; cfg.rippleSpeedHz = 1.2 * mult; } };
-  }
+  playPauseBtn.addEventListener('click', togglePlayPause);
+  nextBtn.addEventListener('click', playNext);
+  prevBtn.addEventListener('click', playPrev);
 
-  /* -------------------- 초기화 -------------------- */
-  function initialize() {
-    // 검색
-    searchButton.addEventListener('click', performSearch);
-    searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') performSearch(); });
-    searchInput.addEventListener('input', () => { if (!searchInput.value.trim()) clearSearchUI(); });
+  // 키 조절 UI 라벨
+  keyShift.addEventListener('input',()=>{ keyShiftLabel.textContent = keyShift.value; });
 
-    // 플레이어 컨트롤
-    playPauseBtn.addEventListener('click', togglePlayPause);
-    nextBtn.addEventListener('click', playNext);
-    prevBtn.addEventListener('click', playPrev);
-
-    // 설정
-    settingsIconBtn.addEventListener('click', () => settingsPanel.classList.toggle('open'));
-    applyDisplayName.addEventListener('click', () => { if (displayNameInput.value.trim()) artistNameP.textContent = displayNameInput.value.trim(); });
-
-    imageUpload.addEventListener('change', e => {
-      const file = e.target.files[0]; if (!file) return;
-      const reader = new FileReader();
-      reader.onload = ev => { userCoverUrl = ev.target.result; useUserCover = true; albumArtImg.src = userCoverUrl; };
-      reader.readAsDataURL(file);
-    });
-    revertCover.addEventListener('click', () => { useUserCover = false; userCoverUrl = null; albumArtImg.src = originalAlbumArtUrl || PLACEHOLDER; });
-
-    applyColors.addEventListener('click', () => { setCssVar('--ply-primary', primaryColor.value); setCssVar('--ply-secondary', secondaryColor.value); });
-    resetColors.addEventListener('click', () => { primaryColor.value = '#A855F7'; secondaryColor.value = '#7C3AED'; applyColors.click(); });
-
-    applyBg.addEventListener('click', () => setCssVar('--bg-color', bgColor.value));
-    resetBg.addEventListener('click', () => { bgColor.value = '#ffffff'; applyBg.click(); });
-
-    layoutHorizontalBtn.addEventListener('click', () => setLayout('horizontal'));
-    layoutVerticalBtn.addEventListener('click', () => setLayout('vertical'));
-
-    volumeSlider.addEventListener('input', e => {
-      const volume = e.target.value;
-      volumeVal.textContent = `${volume}%`;
-      if (youtubePlayer && youtubePlayer.setVolume) youtubePlayer.setVolume(volume);
-    });
-
-    speedInput.addEventListener('input', e => {
-      const speed = parseFloat(e.target.value);
-      speedVal.textContent = `${speed.toFixed(2)}x`;
-      waveform?.setSpeed(speed);
-    });
-
-    titleSize.addEventListener('input', e => { const size = `${e.target.value}px`; titleSizeVal.textContent = size; setCssVar('--title-size', size); });
-    metaSize.addEventListener('input', e => { const size = `${e.target.value}px`;  metaSizeVal.textContent = size; setCssVar('--meta-size', size); });
-    resetTextSize.addEventListener('click', () => { titleSize.value = 18; metaSize.value = 14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
-
-    // 초기값
-    setLayout('horizontal');
-    waveform = initWaveform(waveformCanvas);
-    speedInput.dispatchEvent(new Event('input'));
-    titleSize.dispatchEvent(new Event('input'));
-    metaSize.dispatchEvent(new Event('input'));
-    applyColors.click();
-    applyBg.click();
-    clearSearchUI();
-  }
-  initialize();
 </script>
 </body>
 </html>
