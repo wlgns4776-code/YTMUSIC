@@ -18,10 +18,11 @@
     #searchResults::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb:hover{background:#A78BFA}
-    #player{ display:flex; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); }
-    #player.layout-horizontal{flex-direction:row;align-items:center;width:100%;max-width:920px}
-    #player.layout-horizontal .album-art{width:5rem;height:5rem}
-    #player.layout-vertical{flex-direction:column;align-items:center;width:320px}
+    #player{ display:flex; flex-direction:column; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); width:100%; max-width:920px}
+    .player-top{ display:flex; width:100%; align-items:center; }
+    #player.layout-vertical .player-top{ flex-direction:column; align-items:center; }
+    #player.layout-horizontal .player-top{ flex-direction:row; }
+    #player .album-art{width:5rem;height:5rem}
     #player.layout-vertical .album-art{width:10rem;height:10rem}
     .text-glow{ text-shadow:0 1px 2px rgba(0,0,0,.25); }
     .title-text{ font-size:var(--title-size); line-height:1.2; }
@@ -30,8 +31,6 @@
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
     #waveformCanvas{width:120px;height:40px}
     @media (min-width:768px){ #waveformCanvas{width:140px;height:44px} }
-    #player.layout-vertical .player-controls{ display:flex; flex-direction:column; align-items:center; width:100%; gap:.5rem; }
-    #player.layout-vertical #waveformCanvas{ margin-left:0; }
     #resultsWrap{ max-height: 50vh; overflow: auto; }
     .player-buttons button { cursor: pointer; transition: transform 0.1s ease; }
     .player-buttons button:active { transform: scale(0.9); }
@@ -41,38 +40,67 @@
     .lyric-line{ line-height:1.2; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
     .current-line{ font-weight:700; opacity:.98; }
     .prev-line,.next-line{ opacity:.75; }
+
+    /* ⏳ 진행바 */
+    .progress-wrap{ width:100%; margin-top:.5rem; padding-top:.25rem; }
+    .progress-row{ display:flex; align-items:center; gap:.5rem; }
+    .time-label{ font-size:.75rem; opacity:.9; min-width:2.5rem; text-align:center; }
+    input[type="range"].progress{
+      -webkit-appearance:none; appearance:none; width:100%; height:6px;
+      background:rgba(255,255,255,.35); border-radius:9999px; outline:none;
+    }
+    input[type="range"].progress::-webkit-slider-thumb{
+      -webkit-appearance:none; appearance:none; width:14px; height:14px;
+      border-radius:50%; background:#ffffff; box-shadow:0 0 0 2px rgba(0,0,0,.15);
+      cursor:pointer;
+    }
+    input[type="range"].progress::-moz-range-thumb{
+      width:14px; height:14px; border:none; border-radius:50%; background:#ffffff; cursor:pointer;
+    }
   </style>
 </head>
 <body class="flex justify-center min-h-screen pt-8">
   <div class="w-full max-w-3xl mx-auto p-4">
     <div class="mb-8 flex justify-center">
       <div id="player" class="p-4 transition-all duration-500 ease-in-out layout-horizontal">
-        <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
-        <div class="flex-grow min-w-0 ml-4">
-          <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
-            <span id="trackTitle" class="truncate max-w-[60vw] sm:max-w-[460px]">노래 제목</span>
-            <span id="trackArtist" class="opacity-90"></span>
-          </h2>
-          <div class="flex items-center opacity-90 text-glow meta-text">
-            <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
+        <!-- 상단 정보 + 컨트롤 -->
+        <div class="player-top w-full">
+          <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
+          <div class="flex-grow min-w-0 ml-4">
+            <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
+              <span id="trackTitle" class="truncate max-w-[60vw] sm:max-w-[460px]">노래 제목</span>
+              <span id="trackArtist" class="opacity-90"></span>
+            </h2>
+            <div class="flex items-center opacity-90 text-glow meta-text">
+              <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
+            </div>
+            <!-- 가사 미리보기 -->
+            <div id="lyricsBox" class="mt-1 hidden"></div>
           </div>
-          <!-- 가사 미리보기 -->
-          <div id="lyricsBox" class="mt-1 hidden"></div>
+          <div class="player-controls flex items-center mt-3 md:mt-0">
+            <div class="player-buttons flex items-center space-x-2 text-2xl">
+              <button id="prevBtn" aria-label="Previous"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1H4z"></path><path d="M15.25 14.5a1 1 0 01-1.5.866l-6-4.5a1 1 0 010-1.732l6-4.5a1 1 0 011.5.866v8.5z"></path></svg></button>
+              <button id="playPauseBtn" aria-label="Play/Pause">
+                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" id="playIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
+                <svg class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20" id="pauseIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+              </button>
+              <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
+            </div>
+            <canvas id="waveformCanvas" class="ml-4"></canvas>
+          </div>
         </div>
-        <div class="player-controls flex items-center mt-3 md:mt-0">
-          <div class="player-buttons flex items-center space-x-2 text-2xl">
-            <button id="prevBtn" aria-label="Previous"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1H4z"></path><path d="M15.25 14.5a1 1 0 01-1.5.866l-6-4.5a1 1 0 010-1.732l6-4.5a1 1 0 011.5.866v8.5z"></path></svg></button>
-            <button id="playPauseBtn" aria-label="Play/Pause">
-              <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" id="playIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-              <svg class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20" id="pauseIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
-            </button>
-            <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
+        <!-- ⏳ 하단 진행바 -->
+        <div class="progress-wrap">
+          <div class="progress-row">
+            <span id="curTime" class="time-label">0:00</span>
+            <input id="progressBar" class="progress" type="range" min="0" max="0" value="0" step="0.01" />
+            <span id="totalTime" class="time-label">0:00</span>
           </div>
-          <canvas id="waveformCanvas" class="ml-4"></canvas>
         </div>
       </div>
     </div>
 
+    <!-- 검색 -->
     <section class="card p-4 mb-4">
       <div class="flex w-full items-center gap-2">
         <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
@@ -86,9 +114,9 @@
     </div>
   </div>
 
-  <!-- 설정 패널 (Gemini UI 완전 제거됨) -->
+  <!-- 설정 패널 (Gemini UI 없음) -->
   <div class="fixed bottom-6 right-6 z-50">
-    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
+    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정"><svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
 
     <div id="settingsPanel" class="card absolute bottom-20 right-0 w-80 bg-white p-6 rounded-2xl shadow-2xl origin-bottom-right space-y-6">
       <div>
@@ -210,6 +238,9 @@
   const nextBtn = document.getElementById('nextBtn');
   const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
+  const curTimeEl = document.getElementById('curTime');
+  const totalTimeEl = document.getElementById('totalTime');
+  const progressBar = document.getElementById('progressBar');
   const PLACEHOLDER = albumArtImg.src;
 
   let originalAlbumArtUrl = PLACEHOLDER;
@@ -220,8 +251,10 @@
   let currentTrackIndex = -1;
   let isPlaying = false;
   let waveform;
+  let progressRaf = null;
+  let userSeeking = false;
 
-  /* -------------------- YouTube IFrame Player API 로드 -------------------- */
+  /* -------------------- YouTube IFrame Player API -------------------- */
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   const firstScriptTag = document.getElementsByTagName('script')[0];
@@ -234,20 +267,23 @@
       events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
     });
   }
-  function onPlayerReady(event) { event.target.setVolume(volumeSlider.value); }
+  function onPlayerReady(event) { event.target.setVolume(volumeSlider.value); updateDurationLabels(); }
   function onPlayerStateChange(event) {
     isPlaying = (event.data === YT.PlayerState.PLAYING);
     playIcon.classList.toggle('hidden', isPlaying);
     pauseIcon.classList.toggle('hidden', !isPlaying);
     if (event.data === YT.PlayerState.ENDED) { playNext(); }
+    startProgressLoop();
   }
 
   /* -------------------- 유틸 -------------------- */
-  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns'; // 필요하면 교체
+  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns'; // 필요 시 교체
   function setCssVar(name, value) { document.documentElement.style.setProperty(name, value); }
   function setLayout(mode) {
     playerDiv.classList.toggle('layout-horizontal', mode === 'horizontal');
     playerDiv.classList.toggle('layout-vertical', mode === 'vertical');
+    const top = playerDiv.querySelector('.player-top');
+    if (mode === 'vertical') top.classList.add('flex-col'); else top.classList.remove('flex-col');
     layoutHorizontalBtn.classList.toggle('bg-purple-500', mode === 'horizontal');
     layoutHorizontalBtn.classList.toggle('text-white', mode === 'horizontal');
     layoutHorizontalBtn.classList.toggle('bg-gray-200', mode === 'vertical');
@@ -261,7 +297,6 @@
   const stripBrackets = s => s?.replace(/\s*[\(\[][^)\]]*[\)\]]\s*/g,' ').replace(/\s{2,}/g,' ').trim();
   const escapeHtml = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
 
-  // 🔧 INST/MR/노래방/키 정보 등 제거
   function containsInstTokens(title){
     return /(inst(?:rumental)?|mr|노래방|가라오케|karaoke|伴奏|반주|minus\s*one|official\s*instrumental|acoustic\s*mr)/i.test(title) ||
            /[+\-]?\d+\s*key/i.test(title) || /(남자키|여자키|남성키|여성키|원키|낮은키|높은키)/i.test(title);
@@ -281,8 +316,6 @@
     t = t.replace(/\b(acoustic|piano|band|mr|inst)\b/ig,' ');
     return t.replace(/\s{2,}/g,' ').trim();
   }
-
-  // 제목에서 “Artist - Title” 또는 “Title - Artist” 추정
   function guessTitleArtistFromTitle(title, channelArtist){
     const cleaned = stripBrackets(title);
     const parts = cleaned.split(' - ').map(s=>s.trim()).filter(Boolean);
@@ -291,22 +324,19 @@
       const right = parts.slice(1).join(' - ');
       const leftHas = containsInstTokens(left);
       const rightHas = containsInstTokens(right);
-      // 1) INST 토큰이 들어간 쪽이 대개 '곡' 쪽
       if (rightHas && !leftHas) return { song: removeInstTokens(right), artist: stripTopic(left) };
       if (leftHas && !rightHas)   return { song: removeInstTokens(left),  artist: stripTopic(right) };
-      // 2) 채널명과 일치/부분일치하는 쪽을 artist로
       if (channelArtist){
         const ca = channelArtist.toLowerCase();
         if (left.toLowerCase().includes(ca))  return { song: removeInstTokens(right), artist: stripTopic(left) };
         if (right.toLowerCase().includes(ca)) return { song: removeInstTokens(left),  artist: stripTopic(right) };
       }
-      // 3) 기본은 “Title - Artist”(유튜브 흔한 패턴)
       return { song: removeInstTokens(left), artist: stripTopic(right) };
     }
     return { song: removeInstTokens(cleaned), artist: '' };
   }
 
-  /* -------------------- LRCLIB: 가사 -------------------- */
+  /* -------------------- LRCLIB -------------------- */
   async function tryGet(track, artist){
     try{
       const res = await fetch(`https://lrclib.net/api/get?track_name=${encodeURIComponent(track)}&artist_name=${encodeURIComponent(artist)}`);
@@ -329,14 +359,10 @@
     return '';
   }
   async function fetchLyricsSmart(artist, title){
-    // 1) 정확 조회
     let txt = await tryGet(title, artist); if (txt) return txt;
-    // 2) 검색(artist+title)
     txt = await trySearch(title, artist); if (txt) return txt;
-    // 3) artist/title 뒤바꿔 시도
     txt = await tryGet(artist, title); if (txt) return txt;
     txt = await trySearch(artist, title); if (txt) return txt;
-    // 4) 제목만으로
     txt = await trySearchTitleOnly(title); if (txt) return txt;
     return '';
   }
@@ -436,7 +462,42 @@
     searchTracks(q);
   }
 
-  /* -------------------- 가사 싱크 표시 루프 -------------------- */
+  /* -------------------- 진행바 로직 -------------------- */
+  function fmt(sec){
+    if (!isFinite(sec) || sec < 0) return '0:00';
+    sec = Math.floor(sec);
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
+  function updateDurationLabels(){
+    const d = youtubePlayer?.getDuration ? youtubePlayer.getDuration() : 0;
+    progressBar.max = isFinite(d) && d>0 ? d : 0;
+    totalTimeEl.textContent = fmt(d||0);
+  }
+  function startProgressLoop(){
+    if (progressRaf) cancelAnimationFrame(progressRaf);
+    const loop = () => {
+      updateDurationLabels();
+      if (youtubePlayer?.getCurrentTime && !userSeeking){
+        const t = youtubePlayer.getCurrentTime();
+        progressBar.value = t || 0;
+        curTimeEl.textContent = fmt(t||0);
+      }
+      progressRaf = requestAnimationFrame(loop);
+    };
+    progressRaf = requestAnimationFrame(loop);
+  }
+  progressBar.addEventListener('input', () => { userSeeking = true; curTimeEl.textContent = fmt(parseFloat(progressBar.value)||0); });
+  const endSeek = () => {
+    const t = parseFloat(progressBar.value)||0;
+    if (youtubePlayer?.seekTo) youtubePlayer.seekTo(t, true);
+    userSeeking = false;
+  };
+  progressBar.addEventListener('change', endSeek);
+  progressBar.addEventListener('pointerup', endSeek);
+  progressBar.addEventListener('touchend', endSeek);
+
+  /* -------------------- 가사 싱크 루프 -------------------- */
   let currentLyrics = { timed:false, lines:[] };
   let currentLineIndex = -1;
   let rafId = null;
@@ -478,20 +539,23 @@
     originalAlbumArtUrl = track.albumImage;
     if (!useUserCover) albumArtImg.src = track.albumImage;
 
-    // 상단 타이틀/채널 표시
     trackTitleSpan.textContent = track.name || '노래 제목';
     const channelArtist = stripTopic((track.artists || []).map(a => a.name).join(', '));
     trackArtistSpan.textContent = channelArtist ? `- ${channelArtist}` : '';
 
-    // 🎯 제목/채널로 원곡 제목/가수 추정 (INST/MR 포함 케이스 대응)
     const guess = guessTitleArtistFromTitle(track.name || '', channelArtist);
     const artistForLyrics = guess.artist || channelArtist;
     const titleForLyrics  = guess.song;
 
-    // 가사 가져오기 + 싱크 루프
     const raw = await fetchLyricsSmart(artistForLyrics, titleForLyrics);
     currentLyrics = parseLRC(raw);
     startLyricsLoop();
+
+    // 진행바 초기화
+    progressBar.value = 0;
+    curTimeEl.textContent = '0:00';
+    updateDurationLabels();
+    startProgressLoop();
   }
   function togglePlayPause() {
     if (!youtubePlayer || currentTrackIndex === -1) return;
