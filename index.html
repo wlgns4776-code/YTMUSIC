@@ -15,28 +15,34 @@
     body{font-family:'Noto Sans KR',sans-serif}
 
     /* 레이아웃: 좌/중/우 3열 */
-    .app-grid{ display:grid; grid-template-columns: 300px 1fr 300px; gap:1rem; }
+    .app-grid{ display:grid; grid-template-columns: 290px 1fr 300px; gap:1rem; }
     @media (max-width:1024px){ .app-grid{ grid-template-columns: 1fr; } }
 
     .card{ background:#fff; border-radius:20px; box-shadow:0 10px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04); }
 
-    /* 좌측 검색 패널 스크롤 */
+    /* 좌측 검색 패널 */
     .panel-scroll{ max-height: calc(100vh - 2rem); overflow:auto; }
+    #searchBox{ position:sticky; top:0; background:#fff; z-index:1; padding-bottom:.5rem; }
+    #searchInput{ width:100%; }
+    #searchResults{ grid-template-columns: 1fr; }
     #searchResults::-webkit-scrollbar{width:8px}
     #searchResults::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
     #searchResults::-webkit-scrollbar-thumb:hover{background:#A78BFA}
 
-    /* 중앙 플레이어 */
-    #player{ display:flex; flex-direction:column; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); width:100%}
-    .player-top{ display:flex; width:100%; align-items:center; padding:1rem; }
+    /* 중앙 플레이어 카드 */
+    #player{ display:flex; color:#fff; background:linear-gradient(90deg,var(--ply-primary),var(--ply-secondary)); border-radius:1rem; box-shadow:0 10px 25px -5px rgba(0,0,0,.15),0 10px 10px -5px rgba(0,0,0,.05); width:100%}
+    .player-row{ display:flex; width:100%; align-items:center; padding:1rem; }
     #player .album-art{width:5rem;height:5rem}
     .text-glow{ text-shadow:0 1px 2px rgba(0,0,0,.25); }
     .title-text{ font-size:var(--title-size); line-height:1.2; }
     .meta-text{ font-size:var(--meta-size); }
+    .player-buttons button { cursor: pointer; transition: transform 0.1s ease; }
+    .player-buttons button:active { transform: scale(0.9); }
+    #waveformCanvas{width:140px;height:44px}
 
-    /* 진행바 */
-    .progress-wrap{ width:100%; padding: .25rem 1rem 1rem 1rem; }
+    /* 진행바 (원래 느낌) */
+    .progress-wrap{ width:100%; padding: 0 1rem 1rem 1rem; }
     .progress-row{ display:flex; align-items:center; gap:.5rem; }
     .time-label{ font-size:.75rem; opacity:.9; min-width:2.5rem; text-align:center; }
     input[type="range"].progress{
@@ -51,35 +57,33 @@
       width:14px; height:14px; border:none; border-radius:50%; background:#ffffff; cursor:pointer;
     }
 
-    /* 가사 영역 */
-    #lyricsPanel{ padding:1rem; }
-    #lyricsBox{ margin-top:.25rem }
-    .lyric-line{ line-height:1.6; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); text-align:center; }
+    /* 가사 (카드 내부) */
+    #lyricsBox{ margin: .25rem 0 0 0; }
+    .lyric-line{ line-height:1.35; filter: drop-shadow(0 1px 1px rgba(0,0,0,.25)); }
     .current-line{ font-weight:700; opacity:.98; }
-    .prev-line,.next-line{ opacity:.75; }
+    .prev-line,.next-line{ opacity:.8; }
 
     /* 우측 모드 패널 */
     .mode-badge{ font-size:.8rem; padding:.4rem .6rem; border-radius:.65rem; background:#f3f4f6; display:inline-flex; gap:.5rem; align-items:center; }
-    .muted{ opacity:.6 }
   </style>
 </head>
 <body class="min-h-screen p-4">
   <div class="app-grid">
     <!-- 좌측: 검색 패널 -->
     <aside class="card p-4 panel-scroll">
-      <h3 class="font-bold mb-3">검색</h3>
-      <div class="flex w-full items-center gap-2 mb-3">
-        <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
-        <button id="searchButton" class="shrink-0 bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 active:scale-95">검색</button>
+      <div id="searchBox">
+        <h3 class="font-bold mb-2">검색</h3>
+        <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="px-4 py-2 bg-white border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
+        <div id="status" class="text-center text-gray-500 mt-2 h-5"></div>
       </div>
-      <div id="status" class="text-center text-gray-500 mb-2 h-6"></div>
-      <div id="searchResults" class="grid grid-cols-2 gap-3"></div>
+      <div id="searchResults" class="grid gap-3 mt-2"></div>
     </aside>
 
-    <!-- 중앙: 플레이어 + 가사 -->
+    <!-- 중앙: 플레이어 카드 -->
     <main>
       <section id="player" class="mb-4">
-        <div class="player-top">
+        <!-- 상단 정보 + 컨트롤 + 파형 -->
+        <div class="player-row">
           <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
           <div class="flex-grow min-w-0 ml-4">
             <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
@@ -89,6 +93,8 @@
             <div class="flex items-center opacity-90 text-glow meta-text">
               <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
             </div>
+            <!-- (카드 내부) 가사 미리보기 -->
+            <div id="lyricsBox" class="mt-1"></div>
           </div>
           <div class="player-controls flex items-center mt-3 md:mt-0">
             <div class="player-buttons flex items-center space-x-2 text-2xl">
@@ -99,6 +105,7 @@
               </button>
               <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
             </div>
+            <canvas id="waveformCanvas" class="ml-4"></canvas>
           </div>
         </div>
 
@@ -111,12 +118,6 @@
           </div>
         </div>
       </section>
-
-      <!-- 가사 패널 -->
-      <section id="lyricsPanel" class="card">
-        <h3 class="font-bold px-4">가사</h3>
-        <div id="lyricsBox" class="px-4 pb-5 text-gray-900"></div>
-      </section>
     </main>
 
     <!-- 우측: 재생 모드 / 키 조절 -->
@@ -126,12 +127,10 @@
         <div class="mode-badge">🎧 일반 모드 <span class="text-gray-400">|</span> 노래방</div>
 
         <div>
-          <label class="block text-sm font-medium text-gray-700 mb-1">키 조절 (반음)</label>
-          <input id="keyShift" type="range" min="-6" max="6" step="1" value="0" class="w-full">
-          <div class="flex justify-between text-xs text-gray-500 mt-1">
-            <span>-6</span><span id="keyShiftLabel">0</span><span>+6</span>
-          </div>
-          <p id="keyShiftHelp" class="text-xs text-gray-500 mt-2"></p>
+          <label class="block text-sm font-medium text-gray-700 mb-1">키 조절 (YouTube 소스에서는 비활성)</label>
+          <input id="keyShift" type="range" min="-6" max="6" step="1" value="0" class="w-full" disabled>
+          <div class="flex justify-between text-xs text-gray-500 mt-1"><span>-6</span><span id="keyShiftLabel">0</span><span>+6</span></div>
+          <p class="text-xs text-gray-500 mt-2">MP3 등 직접 오디오 소스 사용 시 활성화 가능</p>
         </div>
 
         <div>
@@ -143,12 +142,73 @@
     </aside>
   </div>
 
+  <!-- 설정 버튼 & 패널 (복구) -->
+  <div class="fixed bottom-6 right-6 z-50">
+    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정">
+      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    </button>
+
+    <div id="settingsPanel" class="card absolute bottom-20 right-0 w-80 bg-white p-6 rounded-2xl shadow-2xl origin-bottom-right space-y-6 opacity-0 scale-95 translate-y-2 pointer-events-none transition">
+      <div>
+        <label class="block text-sm font-medium text-gray-700">표시 채널명</label>
+        <div class="mt-1 flex items-center gap-2">
+          <input id="displayNameInput" type="text" placeholder="채널명을 입력하세요" class="flex-1 min-w-0 h-10 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+          <button id="applyDisplayName" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">커버 이미지 업로드</label>
+        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
+          <label class="cursor-pointer h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600 inline-flex items-center">
+            <span>이미지 업로드</span>
+            <input id="imageUpload" type="file" class="hidden" accept="image/*">
+          </label>
+          <button id="revertCover" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">원래 썸네일</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">카드 색상</label>
+        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
+          <input id="primaryColor" type="color" value="#A855F7" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <input id="secondaryColor" type="color" value="#7C3AED" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <button id="applyColors" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
+          <button id="resetColors" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">배경 색상</label>
+        <div class="mt-2 flex items-center gap-2">
+          <input id="bgColor" type="color" value="#ffffff" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <button id="applyBg" class="h-10 px-4 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600">적용</button>
+          <button id="resetBg" class="h-10 px-4 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">텍스트 크기</label>
+        <div class="mt-2 space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>제목 크기</span><span id="titleSizeVal">18px</span></div>
+            <input id="titleSize" type="range" min="14" max="36" step="1" value="18" class="w-full">
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>정보 크기 (가수/채널)</span><span id="metaSizeVal">14px</span></div>
+            <input id="metaSize" type="range" min="10" max="24" step="1" value="14" class="w-full">
+          </div>
+          <button id="resetTextSize" class="h-9 px-3 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300">기본</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <div id="youtube-player-container" style="position:absolute; top:-9999px; left:-9999px;"></div>
 
 <script>
-  /* -------------------- DOM refs -------------------- */
+  /* ===== DOM refs ===== */
   const searchInput = document.getElementById('searchInput');
-  const searchButton = document.getElementById('searchButton');
   const searchResultsContainer = document.getElementById('searchResults');
   const statusDiv = document.getElementById('status');
 
@@ -167,25 +227,42 @@
   const playIcon = document.getElementById('playIcon');
   const pauseIcon = document.getElementById('pauseIcon');
 
-  const keyShift = document.getElementById('keyShift');
-  const keyShiftLabel = document.getElementById('keyShiftLabel');
-  const keyShiftHelp = document.getElementById('keyShiftHelp');
   const playbackRate = document.getElementById('playbackRate');
   const rateLabel = document.getElementById('rateLabel');
 
-  const lyricsBox = document.getElementById('lyricsBox');
+  const settingsIconBtn = document.getElementById('settingsIconBtn');
+  const settingsPanel = document.getElementById('settingsPanel');
+  const displayNameInput = document.getElementById('displayNameInput');
+  const applyDisplayName = document.getElementById('applyDisplayName');
+  const imageUpload = document.getElementById('imageUpload');
+  const revertCover = document.getElementById('revertCover');
+  const primaryColor = document.getElementById('primaryColor');
+  const secondaryColor = document.getElementById('secondaryColor');
+  const applyColors = document.getElementById('applyColors');
+  const resetColors = document.getElementById('resetColors');
+  const bgColor = document.getElementById('bgColor');
+  const applyBg = document.getElementById('applyBg');
+  const resetBg = document.getElementById('resetBg');
+  const titleSize = document.getElementById('titleSize');
+  const metaSize = document.getElementById('metaSize');
+  const titleSizeVal = document.getElementById('titleSizeVal');
+  const metaSizeVal = document.getElementById('metaSizeVal');
+  const resetTextSize = document.getElementById('resetTextSize');
 
-  /* -------------------- Player state -------------------- */
+  const lyricsBox = document.getElementById('lyricsBox');
+  const waveformCanvas = document.getElementById('waveformCanvas');
+
+  /* ===== State ===== */
   let youtubePlayer, isPlaying=false, currentPlaylist=[], currentTrackIndex=-1;
   let progressRaf = null, seeking=false;
-
   const PLACEHOLDER = albumArtImg.src;
   const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
 
-  /* -------------------- YouTube IFrame API -------------------- */
-  const tag = document.createElement('script'); tag.src="https://www.youtube.com/iframe_api";
-  document.head.appendChild(tag);
+  /* 🎯 가사 싱크 보정 (필요 시 0.2~0.5 사이 조절) */
+  const LRC_OFFSET = 0.35; // seconds
 
+  /* ===== YouTube IFrame API ===== */
+  const tag = document.createElement('script'); tag.src="https://www.youtube.com/iframe_api"; document.head.appendChild(tag);
   function onYouTubeIframeAPIReady(){
     youtubePlayer = new YT.Player('youtube-player-container',{
       height:'0',width:'0', playerVars:{autoplay:0,controls:0,rel:0,showinfo:0},
@@ -194,11 +271,9 @@
   }
   function onReady(e){
     e.target.setVolume(100);
-    keyShiftHelp.textContent = 'YouTube 소스는 브라우저에서 오디오 스트림을 가공할 수 없어 키 조절이 비활성화됩니다.';
-    keyShift.disabled = true;
     playbackRate.addEventListener('input', () => {
-      rateLabel.textContent = `${parseFloat(playbackRate.value).toFixed(2)}x`;
-      youtubePlayer && youtubePlayer.setPlaybackRate && youtubePlayer.setPlaybackRate(parseFloat(playbackRate.value));
+      const v = parseFloat(playbackRate.value); rateLabel.textContent = `${v.toFixed(2)}x`;
+      youtubePlayer && youtubePlayer.setPlaybackRate && youtubePlayer.setPlaybackRate(v);
     });
   }
   function onState(evt){
@@ -209,12 +284,11 @@
     startProgressLoop();
   }
 
-  /* -------------------- Utils -------------------- */
+  /* ===== Utils ===== */
   function fmt(sec){ if(!isFinite(sec)||sec<0) return '0:00'; sec=Math.floor(sec); const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
-
   function startProgressLoop(){
     if (progressRaf) cancelAnimationFrame(progressRaf);
-    const loop = ()=>{
+    const loop=()=>{
       const d=youtubePlayer?.getDuration?youtubePlayer.getDuration():0;
       totalTimeEl.textContent=fmt(d||0); progressBar.max=d||0;
       if (!seeking){
@@ -231,7 +305,7 @@
   progressBar.addEventListener('pointerup',endSeek);
   progressBar.addEventListener('touchend',endSeek);
 
-  /* -------------------- Search (Left) -------------------- */
+  /* ===== Search (Left) ===== */
   function clearResults(){ searchResultsContainer.innerHTML=''; }
   function clearSearchUI(){ statusDiv.textContent=''; clearResults(); }
   async function searchYoutube(q){
@@ -258,7 +332,7 @@
       card.className='bg-white rounded-xl p-2 cursor-pointer hover:shadow-lg transition-shadow';
       const artist=(t.artists||[]).map(a=>a.name).join(', ');
       card.innerHTML=`
-        <img src="${t.albumImage}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
+        <img src="${t.albumImage}" class="w-full rounded-lg shadow-sm aspect-video object-cover">
         <div class="mt-1">
           <p class="font-bold text-gray-900 truncate text-sm">${t.name}</p>
           <p class="text-xs text-gray-600 truncate">${artist}</p>
@@ -276,11 +350,17 @@
     if(!q){ clearSearchUI(); return; }
     searchTracks(q);
   }
-  searchButton.addEventListener('click', performSearch);
+  // 검색창은 폭맞춤 위해 버튼 없이 엔터/디바운스만
+  let debounceTimer=null;
+  searchInput.addEventListener('input',()=>{
+    const q = searchInput.value.trim();
+    if(!q){ clearSearchUI(); return; }
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(()=>searchTracks(q), 300);
+  });
   searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
-  searchInput.addEventListener('input', ()=>{ if(!searchInput.value.trim()) clearSearchUI(); });
 
-  /* -------------------- Lyrics (LRCLIB) -------------------- */
+  /* ===== Lyrics (LRCLIB) ===== */
   const stripTopic = s => s?.replace(/\s*-\s*Topic$/i,'').trim();
   const stripBrackets = s => s?.replace(/\s*[\(\[][^)\]]*[\)\]]\s*/g,' ').replace(/\s{2,}/g,' ').trim();
   const escapeHtml = s => s.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -354,32 +434,37 @@
     });
     out.sort((a,b)=>a.t-b.t); return {timed:true,lines:out};
   }
-  function formatLyrics(prev,cur,next){
-    let html=''; if(prev) html+=`<div class="lyric-line prev-line">${escapeHtml(prev.s)}</div>`;
-    if(cur) html+=`<div class="lyric-line current-line">${escapeHtml(cur.s)}</div>`;
-    if(next) html+=`<div class="lyric-line next-line">${escapeHtml(next.s)}</div>`;
-    return html;
+  function renderLyricsAtTime(t){
+    if(!currentLyrics.lines.length){ lyricsBox.innerHTML=''; return; }
+    // 보정 적용
+    const T = Math.max(0, t - LRC_OFFSET);
+    let idx = 0;
+    if(currentLyrics.timed){
+      // 이진탐색으로 속도 개선
+      let lo=0, hi=currentLyrics.lines.length-1;
+      while(lo<hi){
+        const mid=Math.floor((lo+hi+1)/2);
+        if(currentLyrics.lines[mid].t<=T+0.02) lo=mid; else hi=mid-1;
+      }
+      idx=lo;
+    }
+    const prev=currentLyrics.lines[idx-1]||null, cur=currentLyrics.lines[idx]||null, next=currentLyrics.lines[idx+1]||null;
+    let html='';
+    if(prev) html+=`<div class="lyric-line prev-line text-white/80 text-sm">${escapeHtml(prev.s)}</div>`;
+    if(cur)  html+=`<div class="lyric-line current-line text-white text-sm">${escapeHtml(cur.s)}</div>`;
+    if(next) html+=`<div class="lyric-line next-line text-white/80 text-sm">${escapeHtml(next.s)}</div>`;
+    lyricsBox.innerHTML=html;
   }
-  let currentLyrics={timed:false,lines:[]}, lyricIdx=-1, lyricRaf=null;
+  let currentLyrics={timed:false,lines:[]}, lyricsRaf=null;
   function startLyricsLoop(){
     stopLyricsLoop();
-    if(!currentLyrics.lines.length){ lyricsBox.innerHTML='<p class="text-center text-gray-400">가사를 찾지 못했습니다.</p>'; return; }
-    const loop=()=>{
-      const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
-      let idx=0;
-      if(currentLyrics.timed){ while(idx+1<currentLyrics.lines.length && currentLyrics.lines[idx+1].t<=t+0.05) idx++; }
-      if(idx!==lyricIdx){
-        lyricIdx=idx;
-        const p=currentLyrics.lines[idx-1]||null, c=currentLyrics.lines[idx]||null, n=currentLyrics.lines[idx+1]||null;
-        lyricsBox.innerHTML=formatLyrics(p,c,n);
-      }
-      lyricRaf=requestAnimationFrame(loop);
-    };
-    lyricRaf=requestAnimationFrame(loop);
+    if(!currentLyrics.lines.length){ lyricsBox.innerHTML=''; return; }
+    const loop=()=>{ const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0; renderLyricsAtTime(t); lyricsRaf=requestAnimationFrame(loop); };
+    lyricsRaf=requestAnimationFrame(loop);
   }
-  function stopLyricsLoop(){ if(lyricRaf) cancelAnimationFrame(lyricRaf); lyricRaf=null; lyricIdx=-1; }
+  function stopLyricsLoop(){ if(lyricsRaf) cancelAnimationFrame(lyricsRaf); lyricsRaf=null; }
 
-  /* -------------------- Playback -------------------- */
+  /* ===== Playback ===== */
   async function playTrack(i){
     if(i<0 || i>=currentPlaylist.length) return;
     currentTrackIndex=i;
@@ -391,9 +476,6 @@
     const channelArtist=(t.artists||[]).map(a=>a.name).join(', ');
     trackArtistSpan.textContent=channelArtist?`- ${channelArtist}`:'';
     artistNameP.textContent='채널명';
-
-    // 키조절(YouTube 비활성 안내 유지)
-    keyShift.value=0; keyShiftLabel.textContent='0';
 
     // 가사
     const guess=guessTitleArtistFromTitle(t.name||'', channelArtist.replace(/\s*-\s*Topic$/i,''));
@@ -412,9 +494,66 @@
   nextBtn.addEventListener('click', playNext);
   prevBtn.addEventListener('click', playPrev);
 
-  // 키 조절 UI 라벨
-  keyShift.addEventListener('input',()=>{ keyShiftLabel.textContent = keyShift.value; });
+  /* ===== Settings panel ===== */
+  const toggleSettings = () => {
+    const open = settingsPanel.style.opacity !== '1';
+    settingsPanel.style.opacity = open ? '1' : '0';
+    settingsPanel.style.transform = open ? 'scale(1) translateY(0)' : 'scale(.95) translateY(8px)';
+    settingsPanel.style.pointerEvents = open ? 'auto' : 'none';
+  };
+  settingsIconBtn.addEventListener('click', toggleSettings);
+  applyDisplayName.addEventListener('click', () => { if (displayNameInput.value.trim()) artistNameP.textContent = displayNameInput.value.trim(); });
+  imageUpload.addEventListener('change', e => {
+    const file = e.target.files[0]; if (!file) return;
+    const reader = new FileReader();
+    reader.onload = ev => { albumArtImg.src = ev.target.result; };
+    reader.readAsDataURL(file);
+  });
+  revertCover.addEventListener('click', () => {});
+  applyColors.addEventListener('click', () => { document.documentElement.style.setProperty('--ply-primary', primaryColor.value); document.documentElement.style.setProperty('--ply-secondary', secondaryColor.value); });
+  resetColors.addEventListener('click', () => { primaryColor.value = '#A855F7'; secondaryColor.value = '#7C3AED'; applyColors.click(); });
+  applyBg.addEventListener('click', () => document.documentElement.style.setProperty('--bg-color', bgColor.value));
+  resetBg.addEventListener('click', () => { bgColor.value = '#ffffff'; applyBg.click(); });
+  titleSize.addEventListener('input', e => { const size = `${e.target.value}px`; titleSizeVal.textContent = size; document.documentElement.style.setProperty('--title-size', size); });
+  metaSize.addEventListener('input', e => { const size = `${e.target.value}px`;  metaSizeVal.textContent = size; document.documentElement.style.setProperty('--meta-size', size); });
+  resetTextSize.addEventListener('click', () => { titleSize.value = 18; metaSize.value = 14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
 
+  /* ===== Waveform ===== */
+  function initWaveform(canvas, options = {}) {
+    if (!canvas) return;
+    const cfg = { barCount:18,gap:3,smoothing:0.08,baseSpeedHz:0.6,rippleSpeedHz:1.2,baseWeight:0.75,rippleWeight:0.25,minRatio:0.25,maxRatio:0.85,fillStyle:'rgba(255,255,255,0.88)',glowBlur:6,glowColor:'rgba(255,255,255,0.35)', ...options };
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const ctx = canvas.getContext('2d');
+    let prevHeights=new Array(cfg.barCount).fill(0);
+    let lastW=0,lastH=0, startedAt=null;
+    const easeCos=t=>0.5*(1-Math.cos(Math.PI*2*t));
+    function resizeIfNeeded(){
+      const cssW=canvas.clientWidth||120, cssH=canvas.clientHeight||40;
+      if(cssW!==lastW||cssH!==lastH){ lastW=cssW; lastH=cssH; canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+    }
+    function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,w*.5,h*.5); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr); ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h); ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr); ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath(); }
+    function render(ts){
+      if(!startedAt) startedAt=ts; const t=(ts-startedAt)/1000;
+      resizeIfNeeded(); const W=canvas.clientWidth, H=canvas.clientHeight;
+      ctx.clearRect(0,0,W,H);
+      const barWidth=Math.max(2,(W-(cfg.barCount-1)*cfg.gap)/cfg.barCount);
+      ctx.shadowBlur=cfg.glowBlur; ctx.shadowColor=cfg.glowColor;
+      for(let i=0;i<cfg.barCount;i++){
+        const base=easeCos((t*cfg.baseSpeedHz + i*0.18)%1);
+        const ripple=easeCos((t*cfg.rippleSpeedHz + i*0.35)%1);
+        const mix=cfg.baseWeight*base + cfg.rippleWeight*ripple;
+        const ratio=cfg.minRatio + (cfg.maxRatio-cfg.minRatio)*mix;
+        const target=H*ratio; const h=prevHeights[i]+(target-prevHeights[i])*cfg.smoothing; prevHeights[i]=h;
+        const x=i*(barWidth+cfg.gap), y=H-h, r=Math.min(3,barWidth*0.35);
+        roundRect(ctx,x,y,barWidth,h,r); ctx.fillStyle=cfg.fillStyle; ctx.fill();
+      }
+      ctx.shadowBlur=0; ctx.shadowColor='transparent';
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+    return { setSpeed(mult){ mult=Math.max(0.1, Math.min(5, mult||1)); cfg.baseSpeedHz = 0.6 * mult; cfg.rippleSpeedHz = 1.2 * mult; } };
+  }
+  initWaveform(waveformCanvas);
 </script>
 </body>
 </html>
