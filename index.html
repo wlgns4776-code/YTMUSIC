@@ -29,7 +29,18 @@
     .player-buttons button:active { transform: scale(0.9); }
     #waveformCanvas{width:140px;height:44px}
 
-    /* 검색 결과 스크롤바 */
+    /* ====== ⬇️ 검색 결과 영역 자체 스크롤(페이지 길지 않게) ====== */
+    .results-grid{
+      max-height: 460px;    /* 데스크톱 기본 높이 */
+      overflow-y: auto;     /* 내부 스크롤 */
+      padding-right: 4px;   /* 스크롤바 여백 */
+      overscroll-behavior: contain; /* 섹션 경계에서 페이지 스크롤 전파 방지 */
+    }
+    @media (max-width: 640px){
+      .results-grid{ max-height: 320px; } /* 모바일은 조금 낮게 */
+    }
+
+    /* 스크롤바 스타일 */
     .results-grid::-webkit-scrollbar{width:8px}
     .results-grid::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
     .results-grid::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
@@ -67,14 +78,12 @@
                 </svg>
               </button>
 
-              <!-- 재생/일시정지: 아이콘 분리 (겹침/깨짐 방지) -->
+              <!-- 재생/일시정지 -->
               <button id="playPauseBtn" aria-label="Play/Pause" class="text-white">
-                <!-- ▶ -->
                 <svg id="playIcon" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="10" opacity=".18"></circle>
                   <path d="M10 8.5v7l6-3.5-6-3.5z"/>
                 </svg>
-                <!-- ∥ -->
                 <svg id="pauseIcon" class="w-9 h-9 hidden" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="10" opacity=".18"></circle>
                   <rect x="9" y="8" width="2.6" height="8" rx="0.6"></rect>
@@ -91,7 +100,6 @@
               </button>
             </div>
 
-            <!-- 파형은 카드에 유지 -->
             <canvas id="waveformCanvas" class="ml-4"></canvas>
           </div>
         </div>
@@ -123,6 +131,7 @@
     <section class="card p-4 mb-4">
       <h3 class="font-bold text-green-600 mb-2">Spotify</h3>
       <div id="statusSpotify" class="text-center text-gray-500 mb-2 h-6"></div>
+      <!-- ⬇️ 내부 스크롤은 .results-grid CSS로 적용 -->
       <div id="spotifyResults" class="results-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
     </section>
 
@@ -133,7 +142,7 @@
     </section>
   </div>
 
-  <!-- ===== 설정 플로팅 버튼 ===== -->
+  <!-- ===== 설정 플로팅 버튼 & 패널 ===== -->
   <div class="fixed bottom-6 right-6 z-50">
     <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
@@ -404,31 +413,25 @@
     statusSpotify.textContent='Spotify 검색 중...';
     statusYouTube.textContent='YouTube 검색 중...';
 
-    // 병렬 호출
     const [spList, ytList] = await Promise.all([searchSpotify(q), searchYouTube(q)]);
 
     statusSpotify.textContent = spList.length? '' : '검색 결과가 없습니다.';
     statusYouTube.textContent = ytList.length? '' : '검색 결과가 없습니다.';
 
-    // Spotify 결과 렌더
     spList.forEach((t,i)=> spotifyResults.appendChild(makeCard(t,i,'spotify')));
 
-    // YouTube 결과/플레이리스트 갱신 + 렌더
     currentPlaylist = ytList;
     ytList.forEach((t,i)=> youtubeResults.appendChild(makeCard(t,i,'youtube')));
   }
 
   searchButton.addEventListener('click', performSearch);
-  // 기존: Enter로 검색
   searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
 
-  // ✅ 추가: 입력이 비어지면 두 섹션 결과/상태 모두 초기화
-  searchInput.addEventListener('input', () => {
-    if (!searchInput.value.trim()) {
-      clearResults();   // spotifyResults / youtubeResults / statusSpotify / statusYouTube 모두 비움
-    }
-  });
-
+  // 입력이 비어지면 두 섹션 초기화
+  function clearResultsIfEmpty(){
+    if (!searchInput.value.trim()) clearResults();
+  }
+  searchInput.addEventListener('input', clearResultsIfEmpty);
 
   /* -------------------- 설정/스타일 컨트롤 -------------------- */
   settingsIconBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('open'));
