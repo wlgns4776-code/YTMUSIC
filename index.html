@@ -29,57 +29,21 @@
     .player-buttons button:active { transform: scale(0.9); }
     #waveformCanvas{width:140px;height:44px}
 
-    /* 진행바 — 카드 하단 고정 */
-    .progress-wrap{ width:100%; padding: 0 1rem 1rem 1rem; }
-    .progress-row{ display:flex; align-items:center; gap:.5rem; }
-    .time-label{ font-size:.75rem; opacity:.9; min-width:2.5rem; text-align:center; }
-    input[type="range"].progress{
-      -webkit-appearance:none; appearance:none; width:100%; height:6px;
-      background:rgba(255,255,255,.35); border-radius:9999px; outline:none;
-    }
-    input[type="range"].progress::-webkit-slider-thumb{
-      -webkit-appearance:none; appearance:none; width:14px; height:14px;
-      border-radius:50%; background:#ffffff; box-shadow:0 0 0 2px rgba(0,0,0,.15); cursor:pointer;
-    }
-    input[type="range"].progress::-moz-range-thumb{
-      width:14px; height:14px; border:none; border-radius:50%; background:#ffffff; cursor:pointer;
-    }
-
     /* 검색 결과 스크롤바 */
-    #searchResults::-webkit-scrollbar{width:8px}
-    #searchResults::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
-    #searchResults::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
-    #searchResults::-webkit-scrollbar-thumb:hover{background:#A78BFA}
+    .results-grid::-webkit-scrollbar{width:8px}
+    .results-grid::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
+    .results-grid::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
+    .results-grid::-webkit-scrollbar-thumb:hover{background:#A78BFA}
 
     /* 설정 패널 애니메이션 */
     #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
-
-    /* ====== 검색 소스 탭(Pill) ====== */
-    .tabs-wrap{ background:#f4f4f5; border-radius:9999px; padding:6px; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
-    .tab-pill{
-      position:relative; display:inline-flex; align-items:center; gap:.5rem;
-      padding:.5rem .9rem; border-radius:9999px; font-weight:600;
-      transition: transform .05s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
-      user-select:none;
-    }
-    .tab-pill:active{ transform: scale(.98); }
-    .tab-inactive{ color:#374151; background:transparent; }
-    .tab-inactive:hover{ background:rgba(0,0,0,.04); }
-    .tab-dot{
-      width:10px; height:10px; border-radius:9999px; box-shadow:0 0 0 0 rgba(0,0,0,0);
-      transition: box-shadow .2s ease, background .2s ease, transform .2s ease;
-    }
-    .active-spotify{ background:#16a34a; color:#fff; }
-    .active-spotify .tab-dot{ background:#22c55e; box-shadow:0 0 10px 3px rgba(34,197,94,.55); }
-    .active-youtube{ background:#dc2626; color:#fff; }
-    .active-youtube .tab-dot{ background:#ef4444; box-shadow:0 0 10px 3px rgba(239,68,68,.55); }
   </style>
 </head>
 <body class="flex justify-center min-h-screen pt-8">
   <div class="w-full max-w-3xl mx-auto p-4">
-    <!-- ===== 보라색 플레이어 카드 (컴팩트) ===== -->
-    <section class="mb-6">
+    <!-- ===== 보라색 플레이어 카드 (방송 송출 영역) ===== -->
+    <section class="mb-4">
       <div id="player">
         <div class="player-top">
           <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
@@ -94,58 +58,79 @@
           </div>
 
           <div class="player-controls flex items-center">
-            <div class="player-buttons flex items-center space-x-2 text-2xl">
-              <button id="prevBtn" aria-label="Previous"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1H4z"></path><path d="M15.25 14.5a1 1 0 01-1.5.866l-6-4.5a1 1 0 010-1.732l6-4.5a1 1 0 011.5.866v8.5z"></path></svg></button>
-              <button id="playPauseBtn" aria-label="Play/Pause">
-                <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" id="playIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-                <svg class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20" id="pauseIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+            <div class="player-buttons flex items-center space-x-2">
+              <!-- 이전 -->
+              <button id="prevBtn" aria-label="Previous" class="text-white/95">
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M5 5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5z"/>
+                  <path d="M18 6.5a1 1 0 0 0-1.55-.832l-8 5a1 1 0 0 0 0 1.664l8 5A1 1 0 0 0 18 17.5v-11z"/>
+                </svg>
               </button>
-              <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
+
+              <!-- 재생/일시정지: 아이콘 분리 (겹침/깨짐 방지) -->
+              <button id="playPauseBtn" aria-label="Play/Pause" class="text-white">
+                <!-- ▶ -->
+                <svg id="playIcon" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" opacity=".18"></circle>
+                  <path d="M10 8.5v7l6-3.5-6-3.5z"/>
+                </svg>
+                <!-- ∥ -->
+                <svg id="pauseIcon" class="w-9 h-9 hidden" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" opacity=".18"></circle>
+                  <rect x="9" y="8" width="2.6" height="8" rx="0.6"></rect>
+                  <rect x="12.4" y="8" width="2.6" height="8" rx="0.6"></rect>
+                </svg>
+              </button>
+
+              <!-- 다음 -->
+              <button id="nextBtn" aria-label="Next" class="text-white/95">
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/>
+                  <path d="M6 6.5a1 1 0 0 1 1.55-.832l8 5a1 1 0 0 1 0 1.664l-8 5A1 1 0 0 1 6 17.5v-11z"/>
+                </svg>
+              </button>
             </div>
 
-            <!-- 🔊 볼륨(위) + 파형(아래) -->
-            <div class="flex flex-col items-stretch ml-4 w-44">
-              <input id="volumeSlider" type="range" min="0" max="100" step="1" value="100" class="w-full mb-1">
-              <canvas id="waveformCanvas" class="ml-0"></canvas>
-            </div>
-          </div>
-        </div>
-
-        <!-- 진행바(하단) -->
-        <div class="progress-wrap">
-          <div class="progress-row">
-            <span id="curTime" class="time-label">0:00</span>
-            <input id="progressBar" class="progress" type="range" min="0" max="0" value="0" step="0.01" />
-            <span id="totalTime" class="time-label">0:00</span>
+            <!-- 파형은 카드에 유지 -->
+            <canvas id="waveformCanvas" class="ml-4"></canvas>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== 검색 UI ===== -->
-    <section class="card p-4 mb-4">
-      <!-- 소스 탭 (설명 문구 삭제됨) -->
-      <div class="flex items-center mb-3">
-        <div id="sourceTabs" class="tabs-wrap inline-flex gap-1">
-          <button id="tabSpotify" class="tab-pill tab-inactive" data-mode="spotify" aria-selected="false">
-            <span class="tab-dot"></span>Spotify
-          </button>
-          <button id="tabYouTube" class="tab-pill active-youtube" data-mode="youtube" aria-selected="true">
-            <span class="tab-dot"></span>YouTube
-          </button>
+    <!-- ===== 재생바 & 볼륨바 전용 카드 ===== -->
+    <section class="card p-4 mb-6">
+      <div class="flex items-center gap-3">
+        <span id="curTime" class="text-sm text-gray-600 min-w-[2.8rem] text-center">0:00</span>
+        <input id="progressBar" class="flex-1" type="range" min="0" max="0" value="0" step="0.01" />
+        <span id="totalTime" class="text-sm text-gray-600 min-w-[2.8rem] text-center">0:00</span>
+        <div class="flex items-center gap-2 w-44">
+          <svg class="w-5 h-5 text-gray-500" viewBox="0 0 24 24" fill="currentColor"><path d="M4 10v4h3l4 3V7L7 10H4z"/></svg>
+          <input id="volumeSlider" type="range" min="0" max="100" step="1" value="100" class="w-full">
         </div>
       </div>
+    </section>
 
+    <!-- ===== 검색창 ===== -->
+    <section class="card p-4 mb-4">
       <div class="flex w-full items-center gap-2">
         <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
         <button id="searchButton" class="shrink-0 bg-purple-600 text-white px-5 py-2 rounded-r-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-transform active:scale-95">검색</button>
       </div>
     </section>
 
-    <div id="resultsWrap" class="card p-4">
-      <div id="status" class="text-center text-gray-500 mb-3 h-6"></div>
-      <section><div id="searchResults" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div></section>
-    </div>
+    <!-- ===== 동시 표기: 위=Spotify / 아래=YouTube ===== -->
+    <section class="card p-4 mb-4">
+      <h3 class="font-bold text-green-600 mb-2">Spotify 결과 (메타 적용)</h3>
+      <div id="statusSpotify" class="text-center text-gray-500 mb-2 h-6"></div>
+      <div id="spotifyResults" class="results-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+    </section>
+
+    <section class="card p-4">
+      <h3 class="font-bold text-red-600 mb-2">YouTube 결과 (재생 가능)</h3>
+      <div id="statusYouTube" class="text-center text-gray-500 mb-2 h-6"></div>
+      <div id="youtubeResults" class="results-grid grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4"></div>
+    </section>
   </div>
 
   <!-- ===== 설정 플로팅 버튼 ===== -->
@@ -212,11 +197,11 @@
     </div>
   </div>
 
+  <!-- YouTube iframe host -->
   <div id="youtube-player-container" style="position: absolute; top: -9999px; left: -9999px;"></div>
 
 <script>
-  /* -------------------- DOM & 전역 변수 -------------------- */
-  const playerDiv = document.getElementById('player');
+  /* -------------------- DOM -------------------- */
   const albumArtImg = document.getElementById('albumArt');
   const trackTitleSpan = document.getElementById('trackTitle');
   const trackArtistSpan = document.getElementById('trackArtist');
@@ -225,11 +210,6 @@
 
   const searchInput = document.getElementById('searchInput');
   const searchButton = document.getElementById('searchButton');
-  const statusDiv = document.getElementById('status');
-  const searchResultsContainer = document.getElementById('searchResults');
-
-  const tabSpotify = document.getElementById('tabSpotify');
-  const tabYouTube = document.getElementById('tabYouTube');
 
   const playPauseBtn = document.getElementById('playPauseBtn');
   const prevBtn = document.getElementById('prevBtn');
@@ -240,10 +220,10 @@
   const progressBar = document.getElementById('progressBar');
   const curTimeEl = document.getElementById('curTime');
   const totalTimeEl = document.getElementById('totalTime');
+  const volumeSlider = document.getElementById('volumeSlider');
 
   const settingsIconBtn = document.getElementById('settingsIconBtn');
   const settingsPanel = document.getElementById('settingsPanel');
-
   const displayNameInput = document.getElementById('displayNameInput');
   const applyDisplayName = document.getElementById('applyDisplayName');
 
@@ -254,7 +234,6 @@
   const secondaryColor = document.getElementById('secondaryColor');
   const applyColors = document.getElementById('applyColors');
   const resetColors = document.getElementById('resetColors');
-
   const bgColor = document.getElementById('bgColor');
   const applyBg = document.getElementById('applyBg');
   const resetBg = document.getElementById('resetBg');
@@ -265,46 +244,24 @@
   const metaSizeVal = document.getElementById('metaSizeVal');
   const resetTextSize = document.getElementById('resetTextSize');
 
-  const volumeSlider = document.getElementById('volumeSlider');
+  const statusSpotify = document.getElementById('statusSpotify');
+  const statusYouTube = document.getElementById('statusYouTube');
+  const spotifyResults = document.getElementById('spotifyResults');
+  const youtubeResults = document.getElementById('youtubeResults');
 
+  /* -------------------- 상태 -------------------- */
   const PLACEHOLDER = albumArtImg.src;
   let originalAlbumArtUrl = PLACEHOLDER;
   let userCoverUrl = null;
   let useUserCover = false;
 
   let youtubePlayer;
-  let currentPlaylist = [];
+  let currentPlaylist = []; // YouTube 전용
   let currentTrackIndex = -1;
   let isPlaying = false;
-  let waveform;
+  let progressRaf = null;
 
-  /* -------------------- 검색 소스 모드 -------------------- */
-  let searchMode = 'youtube'; // 'spotify' | 'youtube'
-  function setTab(mode){
-    searchMode = mode;
-
-    // 초기화
-    tabSpotify.classList.remove('active-spotify','tab-inactive');
-    tabYouTube.classList.remove('active-youtube','tab-inactive');
-
-    if(mode==='spotify'){
-      tabSpotify.classList.add('active-spotify');
-      tabYouTube.classList.add('tab-inactive');
-      tabSpotify.setAttribute('aria-selected','true');
-      tabYouTube.setAttribute('aria-selected','false');
-    }else{
-      tabYouTube.classList.add('active-youtube');
-      tabSpotify.classList.add('tab-inactive');
-      tabYouTube.setAttribute('aria-selected','true');
-      tabSpotify.setAttribute('aria-selected','false');
-    }
-    statusDiv.textContent = '';
-    clearResults();
-  }
-  tabSpotify.addEventListener('click', ()=>setTab('spotify'));
-  tabYouTube.addEventListener('click', ()=>setTab('youtube'));
-
-  /* -------------------- YouTube IFrame Player API 로드 -------------------- */
+  /* -------------------- YouTube Iframe API -------------------- */
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   document.head.appendChild(tag);
@@ -316,97 +273,83 @@
       events: { 'onReady': onPlayerReady, 'onStateChange': onPlayerStateChange }
     });
   }
-
-  function onPlayerReady(event) { event.target.setVolume(volumeSlider.value); }
-  function onPlayerStateChange(event) {
-    isPlaying = (event.data === YT.PlayerState.PLAYING);
+  function onPlayerReady(e) { e.target.setVolume(volumeSlider.value); }
+  function onPlayerStateChange(e) {
+    isPlaying = (e.data === YT.PlayerState.PLAYING);
     playIcon.classList.toggle('hidden', isPlaying);
     pauseIcon.classList.toggle('hidden', !isPlaying);
-    if (event.data === YT.PlayerState.ENDED) { playNext(); }
+    if (e.data === YT.PlayerState.ENDED) playNext();
   }
 
-  /* -------------------- 플레이어 컨트롤 -------------------- */
-  function playTrack(index) {
-    if (index >= 0 && index < currentPlaylist.length) {
-      currentTrackIndex = index;
-      const track = currentPlaylist[currentTrackIndex];
-      if (!track.videoId) return; // (YouTube 모드 전용)
-      youtubePlayer.loadVideoById(track.videoId);
-      originalAlbumArtUrl = track.albumImage;
-      if (!useUserCover) albumArtImg.src = track.albumImage;
-      trackTitleSpan.textContent = track.name || '노래 제목';
-      const artistNames = (track.artists || []).map(a => a.name).join(', ');
-      trackArtistSpan.textContent = artistNames ? `- ${artistNames}` : '';
-      startProgressLoop();
-    }
-  }
-  function togglePlayPause() {
-    if (!youtubePlayer || currentTrackIndex === -1) return;
-    isPlaying ? youtubePlayer.pauseVideo() : youtubePlayer.playVideo();
-  }
-  function playNext() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex + 1) % currentPlaylist.length); }
-  function playPrev() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length); }
-
-  /* -------------------- 진행바 & 볼륨 -------------------- */
-  let seeking = false, progressRaf = null;
+  /* -------------------- 컨트롤 -------------------- */
   function fmt(sec){ if(!isFinite(sec)||sec<0) return '0:00'; sec=Math.floor(sec); const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
+
   function startProgressLoop(){
     if (progressRaf) cancelAnimationFrame(progressRaf);
     const loop = ()=>{
       const d=youtubePlayer?.getDuration?youtubePlayer.getDuration():0;
       totalTimeEl.textContent=fmt(d||0); progressBar.max=d||0;
-      if (!seeking){
-        const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
-        curTimeEl.textContent=fmt(t||0); progressBar.value=t||0;
-      }
+      const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
+      curTimeEl.textContent=fmt(t||0); if(!seeking) progressBar.value=t||0;
       progressRaf=requestAnimationFrame(loop);
     };
     progressRaf=requestAnimationFrame(loop);
   }
-  progressBar.addEventListener('input',()=>{seeking=true;curTimeEl.textContent=fmt(parseFloat(progressBar.value)||0)});
-  const endSeek=()=>{ const t=parseFloat(progressBar.value)||0; youtubePlayer?.seekTo && youtubePlayer.seekTo(t,true); seeking=false };
-  ['change','pointerup','touchend'].forEach(ev=>progressBar.addEventListener(ev,endSeek));
 
-  volumeSlider.addEventListener('input', e => {
-    const volume = e.target.value;
-    if (youtubePlayer && youtubePlayer.setVolume) youtubePlayer.setVolume(volume);
-  });
+  function playTrack(index){
+    if (index<0 || index>=currentPlaylist.length) return;
+    currentTrackIndex=index;
+    const track=currentPlaylist[index];
+    youtubePlayer.loadVideoById(track.videoId);
+    originalAlbumArtUrl=track.albumImage;
+    if (!useUserCover) albumArtImg.src=track.albumImage;
+    trackTitleSpan.textContent=track.name||'노래 제목';
+    const artistNames=(track.artists||[]).map(a=>a.name).join(', ');
+    trackArtistSpan.textContent=artistNames?`- ${artistNames}`:'';
+    startProgressLoop();
+  }
+  function togglePlayPause(){ if(!youtubePlayer||currentTrackIndex===-1) return; isPlaying?youtubePlayer.pauseVideo():youtubePlayer.playVideo(); }
+  function playNext(){ if(currentPlaylist.length) playTrack((currentTrackIndex+1)%currentPlaylist.length); }
+  function playPrev(){ if(currentPlaylist.length) playTrack((currentTrackIndex-1+currentPlaylist.length)%currentPlaylist.length); }
+
+  playPauseBtn.addEventListener('click', togglePlayPause);
+  nextBtn.addEventListener('click', playNext);
+  prevBtn.addEventListener('click', playPrev);
+
+  // 진행바/볼륨
+  let seeking=false;
+  progressBar.addEventListener('input', ()=>{ seeking=true; curTimeEl.textContent=fmt(parseFloat(progressBar.value)||0) });
+  const endSeek=()=>{ const t=parseFloat(progressBar.value)||0; youtubePlayer?.seekTo&&youtubePlayer.seekTo(t,true); seeking=false; };
+  ['change','pointerup','touchend','mouseup','keyup'].forEach(ev=>progressBar.addEventListener(ev,endSeek));
+  volumeSlider.addEventListener('input', e => { const v=e.target.value; if(youtubePlayer?.setVolume) youtubePlayer.setVolume(v); });
 
   /* -------------------- API 키 -------------------- */
-  // YouTube
   const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
-
-  // Spotify (⚠️ 배포용으로는 클라이언트에서 비밀키 사용 금지!)
   const SPOTIFY_CLIENT_ID = '13ada5c13a834887b16d181b5730a8b3';
   const SPOTIFY_CLIENT_SECRET = 'e29f437d6c3d46509926b78b0fd885fb';
-  let spotifyToken = null;
-  let spotifyTokenExp = 0; // epoch ms
+  let spotifyToken=null, spotifyTokenExp=0;
 
   async function getSpotifyToken(){
-    const now = Date.now();
-    if (spotifyToken && now < spotifyTokenExp - 10_000) return spotifyToken;
-    const body = new URLSearchParams({ grant_type: 'client_credentials' });
-    const auth = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-    const res = await fetch('https://accounts.spotify.com/api/token', {
-      method: 'POST',
-      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
-      body
-    });
-    if (!res.ok) throw new Error('Spotify 토큰 발급 실패');
-    const data = await res.json();
-    spotifyToken = data.access_token;
-    spotifyTokenExp = Date.now() + (data.expires_in * 1000);
-    return spotifyToken;
+    const now=Date.now();
+    if(spotifyToken && now < spotifyTokenExp-10000) return spotifyToken;
+    const body=new URLSearchParams({grant_type:'client_credentials'});
+    const auth=btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
+    const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Authorization':`Basic ${auth}`,'Content-Type':'application/x-www-form-urlencoded'},body});
+    if(!res.ok) throw new Error('Spotify 토큰 발급 실패');
+    const data=await res.json(); spotifyToken=data.access_token; spotifyTokenExp=Date.now()+data.expires_in*1000; return spotifyToken;
   }
 
-  /* -------------------- 검색 구현 -------------------- */
-  function clearResults() { searchResultsContainer.innerHTML = ''; }
+  /* -------------------- 검색 구현 (동시) -------------------- */
+  function clearResults(){
+    spotifyResults.innerHTML=''; youtubeResults.innerHTML='';
+    statusSpotify.textContent=''; statusYouTube.textContent='';
+  }
 
-  function renderCard(track, index, mode){
-    const card = document.createElement('div');
-    card.className = 'bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
-    const artistNames = (track.artists || []).map(a => a.name).join(', ');
-    card.innerHTML = `
+  function makeCard(track, index, mode){
+    const card=document.createElement('div');
+    card.className='bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
+    const artistNames=(track.artists||[]).map(a=>a.name).join(', ');
+    card.innerHTML=`
       <div class="relative">
         <img src="${track.albumImage}" alt="${track.name}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
       </div>
@@ -414,124 +357,94 @@
         <p class="font-bold text-gray-900 truncate text-sm" title="${track.name}">${track.name}</p>
         <p class="text-xs text-gray-600 truncate" title="${artistNames}">${artistNames}</p>
       </div>`;
-    card.addEventListener('click', () => {
-      if (mode==='youtube'){
-        currentPlaylist = tracksCache.youtube || [];
+    card.addEventListener('click', ()=>{
+      if(mode==='youtube'){
         playTrack(index);
-      } else {
+      }else{
         // Spotify: 메타만 적용
-        originalAlbumArtUrl = track.albumImage;
-        if (!useUserCover) albumArtImg.src = track.albumImage;
-        trackTitleSpan.textContent = track.name || '노래 제목';
-        trackArtistSpan.textContent = artistNames ? `- ${artistNames}` : '';
+        originalAlbumArtUrl=track.albumImage;
+        if(!useUserCover) albumArtImg.src=track.albumImage;
+        trackTitleSpan.textContent=track.name||'노래 제목';
+        trackArtistSpan.textContent=artistNames?`- ${artistNames}`:'';
       }
     });
     return card;
   }
 
-  const tracksCache = { youtube: [], spotify: [] };
-
-  function displayResults(tracks, mode) {
-    clearResults();
-    if (!tracks || tracks.length === 0) {
-      if (statusDiv.textContent.endsWith('검색 중...')) statusDiv.textContent = '검색 결과가 없습니다.';
-      return;
-    }
-    statusDiv.textContent = '';
-    if (mode==='youtube'){ tracksCache.youtube = tracks; }
-    else { tracksCache.spotify = tracks; }
-    tracks.forEach((t, i) => searchResultsContainer.appendChild(renderCard(t, i, mode)));
-  }
-
-  /* ---- YouTube 검색 ---- */
-  async function searchYoutube(q) {
-    if (!YOUTUBE_API_KEY || !String(YOUTUBE_API_KEY).trim()) {
-      statusDiv.textContent = 'YouTube API 키를 입력해주세요.';
-      return [];
-    }
-    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&key=${encodeURIComponent(YOUTUBE_API_KEY)}&type=video&maxResults=24&videoCategoryId=10`;
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      if (!res.ok) {
-        const msg = (data && data.error && data.error.message) ? data.error.message : 'API Error';
-        statusDiv.textContent = `검색 오류: ${msg}`;
-        return [];
-      }
-      return (data.items || []).map(item => ({
-        videoId: item.id.videoId,
-        name: item.snippet.title,
-        artists: [{ name: item.snippet.channelTitle }],
-        albumImage: item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || PLACEHOLDER
+  async function searchYouTube(q){
+    if(!YOUTUBE_API_KEY){ statusYouTube.textContent='YouTube API 키 필요'; return []; }
+    const url=`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&key=${encodeURIComponent(YOUTUBE_API_KEY)}&type=video&maxResults=24&videoCategoryId=10`;
+    try{
+      const res=await fetch(url); const data=await res.json();
+      if(!res.ok){ statusYouTube.textContent=(data?.error?.message)||'API 오류'; return []; }
+      return (data.items||[]).map(item=>({
+        videoId:item.id.videoId,
+        name:item.snippet.title,
+        artists:[{name:item.snippet.channelTitle}],
+        albumImage:item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || PLACEHOLDER
       }));
-    } catch (error) {
-      statusDiv.textContent = '네트워크 오류';
-      return [];
-    }
+    }catch{ statusYouTube.textContent='네트워크 오류'; return []; }
   }
 
-  /* ---- Spotify 검색(메타만) ---- */
   async function searchSpotify(q){
-    try {
-      const token = await getSpotifyToken();
-      const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=24`;
-      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }});
-      if (!res.ok){
-        const e = await res.json().catch(()=>({}));
-        const msg = e && e.error && (e.error.message || e.error.reason) ? e.error.message || e.error.reason : 'API Error';
-        statusDiv.textContent = `검색 오류: ${msg}`;
-        return [];
-      }
-      const data = await res.json();
-      const items = data?.tracks?.items || [];
-      return items.map(it => ({
-        name: it.name,
-        artists: (it.artists || []).map(a=>({name:a.name})),
-        albumImage: (it.album?.images?.[0]?.url) || PLACEHOLDER
-      }));
-    } catch (err){
-      statusDiv.textContent = '네트워크/인증 오류';
-      return [];
-    }
+    try{
+      const token=await getSpotifyToken();
+      const url=`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=24`;
+      const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+      if(!res.ok){ const e=await res.json().catch(()=>({})); statusSpotify.textContent=(e?.error?.message||e?.error?.reason||'API 오류'); return []; }
+      const data=await res.json(); const items=data?.tracks?.items||[];
+      return items.map(it=>({ name:it.name, artists:(it.artists||[]).map(a=>({name:a.name})), albumImage:it.album?.images?.[0]?.url || PLACEHOLDER }));
+    }catch{ statusSpotify.textContent='네트워크/인증 오류'; return []; }
   }
 
-  async function performSearch() {
-    const q = searchInput.value.trim();
-    if (!q) { statusDiv.textContent=''; clearResults(); return; }
-    statusDiv.textContent = (searchMode==='spotify') ? 'Spotify 검색 중...' : 'YouTube 검색 중...';
+  async function performSearch(){
+    const q=searchInput.value.trim();
     clearResults();
-    const list = (searchMode==='spotify') ? await searchSpotify(q) : await searchYoutube(q);
-    displayResults(list, searchMode);
+    if(!q) return;
+    statusSpotify.textContent='Spotify 검색 중...';
+    statusYouTube.textContent='YouTube 검색 중...';
+
+    // 병렬 호출
+    const [spList, ytList] = await Promise.all([searchSpotify(q), searchYouTube(q)]);
+
+    statusSpotify.textContent = spList.length? '' : '검색 결과가 없습니다.';
+    statusYouTube.textContent = ytList.length? '' : '검색 결과가 없습니다.';
+
+    // Spotify 결과 렌더
+    spList.forEach((t,i)=> spotifyResults.appendChild(makeCard(t,i,'spotify')));
+
+    // YouTube 결과/플레이리스트 갱신 + 렌더
+    currentPlaylist = ytList;
+    ytList.forEach((t,i)=> youtubeResults.appendChild(makeCard(t,i,'youtube')));
   }
 
-  /* -------------------- 설정 패널 -------------------- */
-  settingsIconBtn.addEventListener('click', () => settingsPanel.classList.toggle('open'));
-  applyDisplayName.addEventListener('click', () => { if (displayNameInput.value.trim()) artistNameP.textContent = displayNameInput.value.trim(); });
-  imageUpload.addEventListener('change', e => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => { userCoverUrl = ev.target.result; useUserCover = true; albumArtImg.src = userCoverUrl; };
+  searchButton.addEventListener('click', performSearch);
+  searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
+
+  /* -------------------- 설정/스타일 컨트롤 -------------------- */
+  settingsIconBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('open'));
+  applyDisplayName.addEventListener('click', ()=>{ const v=displayNameInput.value.trim(); if(v) artistNameP.textContent=v; });
+
+  imageUpload.addEventListener('change', e=>{
+    const file=e.target.files[0]; if(!file) return;
+    const reader=new FileReader();
+    reader.onload=ev=>{ userCoverUrl=ev.target.result; useUserCover=true; albumArtImg.src=userCoverUrl; };
     reader.readAsDataURL(file);
   });
-  revertCover.addEventListener('click', () => { useUserCover = false; userCoverUrl = null; albumArtImg.src = originalAlbumArtUrl || PLACEHOLDER; });
+  revertCover.addEventListener('click', ()=>{ useUserCover=false; userCoverUrl=null; albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER; });
 
-  applyColors.addEventListener('click', () => { document.documentElement.style.setProperty('--ply-primary', primaryColor.value); document.documentElement.style.setProperty('--ply-secondary', secondaryColor.value); });
-  resetColors.addEventListener('click', () => { primaryColor.value = '#A855F7'; secondaryColor.value = '#7C3AED'; applyColors.click(); });
-  applyBg.addEventListener('click', () => document.documentElement.style.setProperty('--bg-color', bgColor.value));
-  resetBg.addEventListener('click', () => { bgColor.value = '#ffffff'; applyBg.click(); });
+  applyColors.addEventListener('click', ()=>{
+    document.documentElement.style.setProperty('--ply-primary', primaryColor.value);
+    document.documentElement.style.setProperty('--ply-secondary', secondaryColor.value);
+  });
+  resetColors.addEventListener('click', ()=>{ primaryColor.value='#A855F7'; secondaryColor.value='#7C3AED'; applyColors.click(); });
 
-  titleSize.addEventListener('input', e => { const size = `${e.target.value}px`; titleSizeVal.textContent = size; document.documentElement.style.setProperty('--title-size', size); });
-  metaSize.addEventListener('input', e => { const size = `${e.target.value}px`; metaSizeVal.textContent = size; document.documentElement.style.setProperty('--meta-size', size); });
-  resetTextSize.addEventListener('click', () => { titleSize.value = 18; metaSize.value = 14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
+  applyBg.addEventListener('click', ()=> document.documentElement.style.setProperty('--bg-color', bgColor.value));
+  resetBg.addEventListener('click', ()=>{ bgColor.value='#ffffff'; applyBg.click(); });
 
-  /* -------------------- 이벤트 바인딩 -------------------- */
-  playPauseBtn.addEventListener('click', togglePlayPause);
-  nextBtn.addEventListener('click', playNext);
-  prevBtn.addEventListener('click', playPrev);
-  searchButton.addEventListener('click', performSearch);
-  searchInput.addEventListener('keyup', e => { if (e.key === 'Enter') performSearch(); });
-  searchInput.addEventListener('input', () => { if (!searchInput.value.trim()) { statusDiv.textContent=''; clearResults(); } });
+  titleSize.addEventListener('input', e=>{ const v=`${e.target.value}px`; titleSizeVal.textContent=v; document.documentElement.style.setProperty('--title-size', v); });
+  metaSize.addEventListener('input', e=>{ const v=`${e.target.value}px`; metaSizeVal.textContent=v; document.documentElement.style.setProperty('--meta-size', v); });
+  resetTextSize.addEventListener('click', ()=>{ titleSize.value=18; metaSize.value=14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
 
   /* -------------------- Waveform -------------------- */
   function initWaveform(canvas, options = {}) {
@@ -566,7 +479,7 @@
     requestAnimationFrame(render);
     return { setSpeed(mult){ mult=Math.max(0.1, Math.min(5, mult||1)); cfg.baseSpeedHz = 0.6 * mult; cfg.rippleSpeedHz = 1.2 * mult; } };
   }
-  waveform = initWaveform(waveformCanvas);
+  initWaveform(waveformCanvas);
 </script>
 </body>
 </html>
