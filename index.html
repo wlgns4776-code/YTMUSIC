@@ -29,7 +29,7 @@
     .player-buttons button:active { transform: scale(0.9); }
     #waveformCanvas{width:140px;height:44px}
 
-    /* ====== 검색 결과 섹션 내부 스크롤 ====== */
+    /* ===== 결과 섹션 내부 스크롤 ===== */
     .results-grid{
       max-height: 460px;
       overflow-y: auto;
@@ -44,11 +44,11 @@
     .results-grid::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
     .results-grid::-webkit-scrollbar-thumb:hover{background:#A78BFA}
 
-    /* ====== ▶ 보라 카드 상단 고정 ====== */
+    /* ===== 보라 카드 상단 고정 ===== */
     .sticky-card{
       position: sticky;
-      top: 1rem;   /* 컨테이너 p-4와 간격 맞춤. 꼭대기에 딱 붙이려면 0으로 변경 */
-      z-index: 40; /* 설정 패널(z-50)보다 낮게, 다른 내용 위로는 떠있게 */
+      top: 1rem;   /* 꼭대기에 붙이려면 0 */
+      z-index: 40; /* 설정 패널(z-50)보다 낮게 */
     }
 
     /* 설정 패널 애니메이션 */
@@ -58,7 +58,7 @@
 </head>
 <body class="flex justify-center min-h-screen pt-8">
   <div class="w-full max-w-3xl mx-auto p-4">
-    <!-- ===== 보라색 플레이어 카드 (방송 송출 영역) - 상단 고정 ===== -->
+    <!-- ===== 보라색 플레이어 카드 (상단 고정) ===== -->
     <section class="mb-4 sticky-card">
       <div id="player">
         <div class="player-top">
@@ -76,23 +76,39 @@
           <div class="player-controls flex items-center">
             <div class="player-buttons flex items-center space-x-2">
               <button id="prevBtn" aria-label="Previous" class="text-white/95">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M5 5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5z"/><path d="M18 6.5a1 1 0 0 0-1.55-.832l-8 5a1 1 0 0 0 0 1.664l8 5A1 1 0 0 0 18 17.5v-11z"/></svg>
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M5 5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1H5z"/>
+                  <path d="M18 6.5a1 1 0 0 0-1.55-.832l-8 5a1 1 0 0 0 0 1.664l8 5A1 1 0 0 0 18 17.5v-11z"/>
+                </svg>
               </button>
+
               <button id="playPauseBtn" aria-label="Play/Pause" class="text-white">
-                <svg id="playIcon" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".18"></circle><path d="M10 8.5v7l6-3.5-6-3.5z"/></svg>
-                <svg id="pauseIcon" class="w-9 h-9 hidden" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10" opacity=".18"></circle><rect x="9" y="8" width="2.6" height="8" rx="0.6"></rect><rect x="12.4" y="8" width="2.6" height="8" rx="0.6"></rect></svg>
+                <svg id="playIcon" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" opacity=".18"></circle>
+                  <path d="M10 8.5v7l6-3.5-6-3.5z"/>
+                </svg>
+                <svg id="pauseIcon" class="w-9 h-9 hidden" viewBox="0 0 24 24" fill="currentColor">
+                  <circle cx="12" cy="12" r="10" opacity=".18"></circle>
+                  <rect x="9" y="8" width="2.6" height="8" rx="0.6"></rect>
+                  <rect x="12.4" y="8" width="2.6" height="8" rx="0.6"></rect>
+                </svg>
               </button>
+
               <button id="nextBtn" aria-label="Next" class="text-white/95">
-                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor"><path d="M18 19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/><path d="M6 6.5a1 1 0 0 1 1.55-.832l8 5a1 1 0 0 1 0 1.664l-8 5A1 1 0 0 1 6 17.5v-11z"/></svg>
+                <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M18 19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/>
+                  <path d="M6 6.5a1 1 0 0 1 1.55-.832l8 5a1 1 0 0 1 0 1.664l-8 5A1 1 0 0 1 6 17.5v-11z"/>
+                </svg>
               </button>
             </div>
+
             <canvas id="waveformCanvas" class="ml-4"></canvas>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ===== 재생바 & 볼륨바 전용 카드 ===== -->
+    <!-- ===== 재생바 & 볼륨바 ===== -->
     <section class="card p-4 mb-6">
       <div class="flex items-center gap-3">
         <span id="curTime" class="text-sm text-gray-600 min-w-[2.8rem] text-center">0:00</span>
@@ -129,13 +145,65 @@
 
   <!-- ===== 설정 플로팅 버튼 & 패널 ===== -->
   <div class="fixed bottom-6 right-6 z-50">
-    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정">
+    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정" type="button">
       <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
     </button>
 
     <div id="settingsPanel" class="card absolute bottom-20 right-0 w-80 bg-white p-6 rounded-2xl shadow-2xl origin-bottom-right space-y-6">
-      <!-- (설정 내용 동일) -->
-      <!-- ... -->
+      <div>
+        <label class="block text-sm font-medium text-gray-700">표시 채널명</label>
+        <div class="mt-1 flex items-center gap-2">
+          <input id="displayNameInput" type="text" placeholder="채널명을 입력하세요" class="flex-1 min-w-0 h-10 px-3 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-purple-500 focus:border-purple-500">
+          <button id="applyDisplayName" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600" type="button">적용</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">커버 이미지 업로드</label>
+        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
+          <label class="cursor-pointer h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600 inline-flex items-center">
+            <span>이미지 업로드</span>
+            <input id="imageUpload" type="file" class="hidden" accept="image/*">
+          </label>
+          <button id="revertCover" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">원래 썸네일</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">카드 색상</label>
+        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
+          <input id="primaryColor" type="color" value="#A855F7" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <input id="secondaryColor" type="color" value="#7C3AED" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <button id="applyColors" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600" type="button">적용</button>
+          <button id="resetColors" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">기본</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">배경 색상</label>
+        <div class="mt-2 flex items-center gap-2">
+          <input id="bgColor" type="color" value="#ffffff" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
+          <button id="applyBg" class="h-10 px-4 text-sm bg-purple-500 text-white rounded-md hover:bg-purple-600" type="button">적용</button>
+          <button id="resetBg" class="h-10 px-4 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">기본</button>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-700">텍스트 크기</label>
+        <div class="mt-2 space-y-3">
+          <div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>제목 크기</span><span id="titleSizeVal">18px</span></div>
+            <input id="titleSize" type="range" min="14" max="36" step="1" value="18" class="w-full">
+          </div>
+          <div>
+            <div class="flex items-center justify-between text-xs text-gray-500 mb-1"><span>정보 크기 (가수/채널)</span><span id="metaSizeVal">14px</span></div>
+            <input id="metaSize" type="range" min="10" max="24" step="1" value="14" class="w-full">
+          </div>
+          <div class="flex gap-2">
+            <button id="resetTextSize" class="h-9 px-3 text-sm bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">기본</button>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -143,8 +211,6 @@
   <div id="youtube-player-container" style="position: absolute; top: -9999px; left: -9999px;"></div>
 
 <script>
-  /* (JS 전체 동일 — 생략 없이 그대로 사용) */
-  // ---- 아래에 네가 주신 JS 그대로 붙여 두었음 ----
   /* -------------------- DOM -------------------- */
   const albumArtImg = document.getElementById('albumArt');
   const trackTitleSpan = document.getElementById('trackTitle');
@@ -193,17 +259,19 @@
   const spotifyResults = document.getElementById('spotifyResults');
   const youtubeResults = document.getElementById('youtubeResults');
 
+  /* -------------------- 상태 -------------------- */
   const PLACEHOLDER = albumArtImg.src;
   let originalAlbumArtUrl = PLACEHOLDER;
   let userCoverUrl = null;
   let useUserCover = false;
 
   let youtubePlayer;
-  let currentPlaylist = [];
+  let currentPlaylist = []; // YouTube 전용
   let currentTrackIndex = -1;
   let isPlaying = false;
   let progressRaf = null;
 
+  /* -------------------- YouTube Iframe API -------------------- */
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
   document.head.appendChild(tag);
@@ -223,15 +291,25 @@
     if (e.data === YT.PlayerState.ENDED) playNext();
   }
 
-  function fmt(sec){ if(!isFinite(sec)||sec<0) return '0:00'; sec=Math.floor(sec); const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
+  /* -------------------- 컨트롤 -------------------- */
+  function fmt(sec){
+    if(!isFinite(sec)||sec<0) return '0:00';
+    sec=Math.floor(sec);
+    const m=Math.floor(sec/60), s=sec%60;
+    return `${m}:${String(s).padStart(2,'0')}`;
+  }
 
   function startProgressLoop(){
     if (progressRaf) cancelAnimationFrame(progressRaf);
     const loop = ()=>{
       const d=youtubePlayer?.getDuration?youtubePlayer.getDuration():0;
-      totalTimeEl.textContent=fmt(d||0); progressBar.max=d||0;
+      totalTimeEl.textContent=fmt(d||0);
+      progressBar.max=d||0;
+
       const t=youtubePlayer?.getCurrentTime?youtubePlayer.getCurrentTime():0;
-      curTimeEl.textContent=fmt(t||0); if(!seeking) progressBar.value=t||0;
+      curTimeEl.textContent=fmt(t||0);
+      if(!seeking) progressBar.value=t||0;
+
       progressRaf=requestAnimationFrame(loop);
     };
     progressRaf=requestAnimationFrame(loop);
@@ -249,21 +327,35 @@
     trackArtistSpan.textContent=artistNames?`- ${artistNames}`:'';
     startProgressLoop();
   }
-  function togglePlayPause(){ if(!youtubePlayer||currentTrackIndex===-1) return; isPlaying?youtubePlayer.pauseVideo():youtubePlayer.playVideo(); }
+  function togglePlayPause(){
+    if(!youtubePlayer||currentTrackIndex===-1) return;
+    isPlaying?youtubePlayer.pauseVideo():youtubePlayer.playVideo();
+  }
   function playNext(){ if(currentPlaylist.length) playTrack((currentTrackIndex+1)%currentPlaylist.length); }
   function playPrev(){ if(currentPlaylist.length) playTrack((currentTrackIndex-1+currentPlaylist.length)%currentPlaylist.length); }
 
-  let seeking=false;
-  const progressBar = document.getElementById('progressBar');
-  const curTimeEl = document.getElementById('curTime');
-  const totalTimeEl = document.getElementById('totalTime');
-  function fmt(sec){ if(!isFinite(sec)||sec<0) return '0:00'; sec=Math.floor(sec); const m=Math.floor(sec/60), s=sec%60; return `${m}:${String(s).padStart(2,'0')}`; }
-  progressBar.addEventListener('input', ()=>{ seeking=true; curTimeEl.textContent=fmt(parseFloat(progressBar.value)||0) });
-  const endSeek=()=>{ const t=parseFloat(progressBar.value)||0; youtubePlayer?.seekTo&&youtubePlayer.seekTo(t,true); seeking=false; };
-  ['change','pointerup','touchend','mouseup','keyup'].forEach(ev=>progressBar.addEventListener(ev,endSeek));
-  const volumeSlider = document.getElementById('volumeSlider');
-  volumeSlider.addEventListener('input', e => { const v=e.target.value; if(youtubePlayer?.setVolume) youtubePlayer.setVolume(v); });
+  playPauseBtn.addEventListener('click', togglePlayPause);
+  nextBtn.addEventListener('click', playNext);
+  prevBtn.addEventListener('click', playPrev);
 
+  // 진행바/볼륨
+  let seeking=false;
+  progressBar.addEventListener('input', ()=>{
+    seeking=true;
+    curTimeEl.textContent=fmt(parseFloat(progressBar.value)||0);
+  });
+  const endSeek=()=>{
+    const t=parseFloat(progressBar.value)||0;
+    youtubePlayer?.seekTo&&youtubePlayer.seekTo(t,true);
+    seeking=false;
+  };
+  ['change','pointerup','touchend','mouseup','keyup'].forEach(ev=>progressBar.addEventListener(ev,endSeek));
+  volumeSlider.addEventListener('input', e => {
+    const v=e.target.value;
+    if(youtubePlayer?.setVolume) youtubePlayer.setVolume(v);
+  });
+
+  /* -------------------- API 키 -------------------- */
   const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
   const SPOTIFY_CLIENT_ID = '13ada5c13a834887b16d181b5730a8b3';
   const SPOTIFY_CLIENT_SECRET = 'e29f437d6c3d46509926b78b0fd885fb';
@@ -274,14 +366,24 @@
     if(spotifyToken && now < spotifyTokenExp-10000) return spotifyToken;
     const body=new URLSearchParams({grant_type:'client_credentials'});
     const auth=btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
-    const res=await fetch('https://accounts.spotify.com/api/token',{method:'POST',headers:{'Authorization':`Basic ${auth}`,'Content-Type':'application/x-www-form-urlencoded'},body});
+    const res=await fetch('https://accounts.spotify.com/api/token',{
+      method:'POST',
+      headers:{'Authorization':`Basic ${auth}`,'Content-Type':'application/x-www-form-urlencoded'},
+      body
+    });
     if(!res.ok) throw new Error('Spotify 토큰 발급 실패');
-    const data=await res.json(); spotifyToken=data.access_token; spotifyTokenExp=Date.now()+data.expires_in*1000; return spotifyToken;
+    const data=await res.json();
+    spotifyToken=data.access_token;
+    spotifyTokenExp=Date.now()+data.expires_in*1000;
+    return spotifyToken;
   }
 
+  /* -------------------- 검색 -------------------- */
   function clearResults(){
-    spotifyResults.innerHTML=''; youtubeResults.innerHTML='';
-    statusSpotify.textContent=''; statusYouTube.textContent='';
+    spotifyResults.innerHTML='';
+    youtubeResults.innerHTML='';
+    statusSpotify.textContent='';
+    statusYouTube.textContent='';
   }
 
   function makeCard(track, index, mode){
@@ -300,6 +402,7 @@
       if(mode==='youtube'){
         playTrack(index);
       }else{
+        // Spotify: 메타만 적용
         originalAlbumArtUrl=track.albumImage;
         if(!useUserCover) albumArtImg.src=track.albumImage;
         trackTitleSpan.textContent=track.name||'노래 제목';
@@ -313,15 +416,22 @@
     if(!YOUTUBE_API_KEY){ statusYouTube.textContent='YouTube API 키 필요'; return []; }
     const url=`https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(q)}&key=${encodeURIComponent(YOUTUBE_API_KEY)}&type=video&maxResults=24&videoCategoryId=10`;
     try{
-      const res=await fetch(url); const data=await res.json();
-      if(!res.ok){ statusYouTube.textContent=(data?.error?.message)||'API 오류'; return []; }
+      const res=await fetch(url);
+      const data=await res.json();
+      if(!res.ok){
+        statusYouTube.textContent=(data?.error?.message)||'API 오류';
+        return [];
+      }
       return (data.items||[]).map(item=>({
         videoId:item.id.videoId,
         name:item.snippet.title,
         artists:[{name:item.snippet.channelTitle}],
         albumImage:item.snippet.thumbnails.high?.url || item.snippet.thumbnails.medium?.url || PLACEHOLDER
       }));
-    }catch{ statusYouTube.textContent='네트워크 오류'; return []; }
+    }catch{
+      statusYouTube.textContent='네트워크 오류';
+      return [];
+    }
   }
 
   async function searchSpotify(q){
@@ -329,10 +439,22 @@
       const token=await getSpotifyToken();
       const url=`https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=24`;
       const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
-      if(!res.ok){ const e=await res.json().catch(()=>({})); statusSpotify.textContent=(e?.error?.message||e?.error?.reason||'API 오류'); return []; }
-      const data=await res.json(); const items=data?.tracks?.items||[];
-      return items.map(it=>({ name:it.name, artists:(it.artists||[]).map(a=>({name:a.name})), albumImage:it.album?.images?.[0]?.url || PLACEHOLDER }));
-    }catch{ statusSpotify.textContent='네트워크/인증 오류'; return []; }
+      if(!res.ok){
+        const e=await res.json().catch(()=>({}));
+        statusSpotify.textContent=(e?.error?.message||e?.error?.reason||'API 오류');
+        return [];
+      }
+      const data=await res.json();
+      const items=data?.tracks?.items||[];
+      return items.map(it=>({
+        name:it.name,
+        artists:(it.artists||[]).map(a=>({name:a.name})),
+        albumImage:it.album?.images?.[0]?.url || PLACEHOLDER
+      }));
+    }catch{
+      statusSpotify.textContent='네트워크/인증 오류';
+      return [];
+    }
   }
 
   async function performSearch(){
@@ -354,11 +476,16 @@
 
   searchButton.addEventListener('click', performSearch);
   searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
-  function clearResultsIfEmpty(){ if (!searchInput.value.trim()) clearResults(); }
-  searchInput.addEventListener('input', clearResultsIfEmpty);
+  searchInput.addEventListener('input', ()=>{ if (!searchInput.value.trim()) clearResults(); });
 
-  settingsIconBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('open'));
-  applyDisplayName.addEventListener('click', ()=>{ const v=displayNameInput.value.trim(); if(v) artistNameP.textContent=v; });
+  /* -------------------- 설정/스타일 컨트롤 -------------------- */
+  settingsIconBtn.addEventListener('click', ()=>{
+    settingsPanel.classList.toggle('open');
+  });
+  applyDisplayName.addEventListener('click', ()=>{
+    const v=displayNameInput.value.trim();
+    if(v) artistNameP.textContent=v;
+  });
 
   imageUpload.addEventListener('change', e=>{
     const file=e.target.files[0]; if(!file) return;
@@ -366,46 +493,101 @@
     reader.onload=ev=>{ userCoverUrl=ev.target.result; useUserCover=true; albumArtImg.src=userCoverUrl; };
     reader.readAsDataURL(file);
   });
-  revertCover.addEventListener('click', ()=>{ useUserCover=false; userCoverUrl=null; albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER; });
+  revertCover.addEventListener('click', ()=>{
+    useUserCover=false; userCoverUrl=null; albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER;
+  });
 
   applyColors.addEventListener('click', ()=>{
     document.documentElement.style.setProperty('--ply-primary', primaryColor.value);
     document.documentElement.style.setProperty('--ply-secondary', secondaryColor.value);
   });
-  resetColors.addEventListener('click', ()=>{ primaryColor.value='#A855F7'; secondaryColor.value='#7C3AED'; applyColors.click(); });
+  resetColors.addEventListener('click', ()=>{
+    primaryColor.value='#A855F7'; secondaryColor.value='#7C3AED'; applyColors.click();
+  });
 
-  applyBg.addEventListener('click', ()=> document.documentElement.style.setProperty('--bg-color', bgColor.value));
-  resetBg.addEventListener('click', ()=>{ bgColor.value='#ffffff'; applyBg.click(); });
+  applyBg.addEventListener('click', ()=>{
+    document.documentElement.style.setProperty('--bg-color', bgColor.value);
+  });
+  resetBg.addEventListener('click', ()=>{
+    bgColor.value='#ffffff'; applyBg.click();
+  });
 
-  titleSize.addEventListener('input', e=>{ const v=`${e.target.value}px`; titleSizeVal.textContent=v; document.documentElement.style.setProperty('--title-size', v); });
-  metaSize.addEventListener('input', e=>{ const v=`${e.target.value}px`; metaSizeVal.textContent=v; document.documentElement.style.setProperty('--meta-size', v); });
-  resetTextSize.addEventListener('click', ()=>{ titleSize.value=18; metaSize.value=14; titleSize.dispatchEvent(new Event('input')); metaSize.dispatchEvent(new Event('input')); });
+  titleSize.addEventListener('input', e=>{
+    const v=`${e.target.value}px`;
+    titleSizeVal.textContent=v;
+    document.documentElement.style.setProperty('--title-size', v);
+  });
+  metaSize.addEventListener('input', e=>{
+    const v=`${e.target.value}px`;
+    metaSizeVal.textContent=v;
+    document.documentElement.style.setProperty('--meta-size', v);
+  });
+  resetTextSize.addEventListener('click', ()=>{
+    titleSize.value=18; metaSize.value=14;
+    titleSize.dispatchEvent(new Event('input'));
+    metaSize.dispatchEvent(new Event('input'));
+  });
 
+  /* -------------------- Waveform -------------------- */
   function initWaveform(canvas, options = {}) {
     if (!canvas) return;
-    const cfg = { barCount:18,gap:3,smoothing:0.08,baseSpeedHz:0.6,rippleSpeedHz:1.2,baseWeight:0.75,rippleWeight:0.25,minRatio:0.25,maxRatio:0.85,fillStyle:'rgba(255,255,255,0.88)',glowBlur:6,glowColor:'rgba(255,255,255,0.35)', ...options };
+    const cfg = {
+      barCount:18,gap:3,smoothing:0.08,
+      baseSpeedHz:0.6,rippleSpeedHz:1.2,
+      baseWeight:0.75,rippleWeight:0.25,
+      minRatio:0.25,maxRatio:0.85,
+      fillStyle:'rgba(255,255,255,0.88)',
+      glowBlur:6,glowColor:'rgba(255,255,255,0.35)',
+      ...options
+    };
     const dpr = Math.max(1, window.devicePixelRatio || 1);
     const ctx = canvas.getContext('2d');
     let prevHeights=new Array(cfg.barCount).fill(0);
     let lastW=0,lastH=0, startedAt=null;
     const easeCos=t=>0.5*(1-Math.cos(Math.PI*2*t));
+
     function resizeIfNeeded(){
       const cssW=canvas.clientWidth||120, cssH=canvas.clientHeight||40;
-      if(cssW!==lastW||cssH!==lastH){ lastW=cssW; lastH=cssH; canvas.width=Math.floor(cssW*dpr); canvas.height=Math.floor(cssH*dpr); ctx.setTransform(dpr,0,0,dpr,0,0); }
+      if(cssW!==lastW||cssH!==lastH){
+        lastW=cssW; lastH=cssH;
+        canvas.width=Math.floor(cssW*dpr);
+        canvas.height=Math.floor(cssH*dpr);
+        ctx.setTransform(dpr,0,0,dpr,0,0);
+      }
     }
-    function roundRect(ctx,x,y,w,h,r){ const rr=Math.min(r,w*.5,h*.5); ctx.beginPath(); ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr); ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h); ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr); ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath(); }
+    function roundRect(ctx,x,y,w,h,r){
+      const rr=Math.min(r,w*.5,h*.5);
+      ctx.beginPath();
+      ctx.moveTo(x+rr,y);
+      ctx.lineTo(x+w-rr,y);
+      ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+      ctx.lineTo(x+w,y+h-rr);
+      ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+      ctx.lineTo(x+rr,y+h);
+      ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+      ctx.lineTo(x,y+rr);
+      ctx.quadraticCurveTo(x,y,x+rr,y);
+      ctx.closePath();
+    }
     function render(ts){
-      if(!startedAt) startedAt=ts; const t=(ts-startedAt)/1000;
-      resizeIfNeeded(); const W=canvas.clientWidth, H=canvas.clientHeight;
+      if(!startedAt) startedAt=ts;
+      const t=(ts-startedAt)/1000;
+      resizeIfNeeded();
+      const W=canvas.clientWidth, H=canvas.clientHeight;
       ctx.clearRect(0,0,W,H);
       const barWidth=Math.max(2,(W-(cfg.barCount-1)*cfg.gap)/cfg.barCount);
       ctx.shadowBlur=cfg.glowBlur; ctx.shadowColor=cfg.glowColor;
       for(let i=0;i<cfg.barCount;i++){
-        const base=easeCos((t*cfg.baseSpeedHz + i*0.18)%1); const ripple=easeCos((t*cfg.rippleSpeedHz + i*0.35)%1);
-        const mix=cfg.baseWeight*base + cfg.rippleWeight*ripple; const ratio=cfg.minRatio + (cfg.maxRatio-cfg.minRatio)*mix;
-        const target=H*ratio; const h=prevHeights[i]+(target-prevHeights[i])*cfg.smoothing; prevHeights[i]=h;
+        const base=easeCos((t*cfg.baseSpeedHz + i*0.18)%1);
+        const ripple=easeCos((t*cfg.rippleSpeedHz + i*0.35)%1);
+        const mix=cfg.baseWeight*base + cfg.rippleWeight*ripple;
+        const ratio=cfg.minRatio + (cfg.maxRatio-cfg.minRatio)*mix;
+        const target=H*ratio;
+        const h=prevHeights[i]+(target-prevHeights[i])*cfg.smoothing;
+        prevHeights[i]=h;
         const x=i*(barWidth+cfg.gap), y=H-h, r=Math.min(3,barWidth*0.35);
-        roundRect(ctx,x,y,barWidth,h,r); ctx.fillStyle=cfg.fillStyle; ctx.fill();
+        roundRect(ctx,x,y,barWidth,h,r);
+        ctx.fillStyle=cfg.fillStyle; ctx.fill();
       }
       ctx.shadowBlur=0; ctx.shadowColor='transparent';
       requestAnimationFrame(render);
