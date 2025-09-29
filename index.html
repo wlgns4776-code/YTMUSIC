@@ -54,6 +54,11 @@
     /* 설정 패널 애니메이션 */
     #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
+
+    /* 검색 소스 탭 */
+    .tab-btn{ @apply px-4 py-2 text-sm rounded-md border transition; }
+    .tab-active{ @apply bg-purple-600 text-white border-purple-600; }
+    .tab-inactive{ @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50; }
   </style>
 </head>
 <body class="flex justify-center min-h-screen pt-8">
@@ -102,8 +107,17 @@
       </div>
     </section>
 
-    <!-- ===== 검색 UI (원래 형식) ===== -->
+    <!-- ===== 검색 UI ===== -->
     <section class="card p-4 mb-4">
+      <!-- 소스 탭 -->
+      <div class="flex items-center justify-between gap-2 mb-3">
+        <div class="inline-flex gap-2" role="tablist" aria-label="Search Source">
+          <button id="tabSpotify" class="tab-btn tab-inactive" data-mode="spotify" aria-selected="false">Spotify</button>
+          <button id="tabYouTube" class="tab-btn tab-active"  data-mode="youtube" aria-selected="true">YouTube</button>
+        </div>
+        <small class="text-xs text-gray-500">Spotify: 메타데이터 적용 / YouTube: 재생</small>
+      </div>
+
       <div class="flex w-full items-center gap-2">
         <input id="searchInput" type="text" placeholder="아티스트나 곡명을 검색하세요..." class="flex-grow px-4 py-2 bg-white border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-purple-500 transition">
         <button id="searchButton" class="shrink-0 bg-purple-600 text-white px-5 py-2 rounded-r-lg hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-opacity-50 transition-transform active:scale-95">검색</button>
@@ -196,6 +210,9 @@
   const statusDiv = document.getElementById('status');
   const searchResultsContainer = document.getElementById('searchResults');
 
+  const tabSpotify = document.getElementById('tabSpotify');
+  const tabYouTube = document.getElementById('tabYouTube');
+
   const playPauseBtn = document.getElementById('playPauseBtn');
   const prevBtn = document.getElementById('prevBtn');
   const nextBtn = document.getElementById('nextBtn');
@@ -243,6 +260,21 @@
   let isPlaying = false;
   let waveform;
 
+  /* -------------------- 검색 소스 모드 -------------------- */
+  let searchMode = 'youtube'; // 'spotify' | 'youtube'
+  function setTab(mode){
+    searchMode = mode;
+    const map = {spotify: tabSpotify, youtube: tabYouTube};
+    [tabSpotify, tabYouTube].forEach(btn=>{
+      if(btn===map[mode]){ btn.classList.remove('tab-inactive'); btn.classList.add('tab-active'); btn.setAttribute('aria-selected','true'); }
+      else{ btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); btn.setAttribute('aria-selected','false'); }
+    });
+    statusDiv.textContent = '';
+    clearResults();
+  }
+  tabSpotify.addEventListener('click', ()=>setTab('spotify'));
+  tabYouTube.addEventListener('click', ()=>setTab('youtube'));
+
   /* -------------------- YouTube IFrame Player API 로드 -------------------- */
   const tag = document.createElement('script');
   tag.src = "https://www.youtube.com/iframe_api";
@@ -256,10 +288,7 @@
     });
   }
 
-  function onPlayerReady(event) {
-    event.target.setVolume(volumeSlider.value);
-  }
-
+  function onPlayerReady(event) { event.target.setVolume(volumeSlider.value); }
   function onPlayerStateChange(event) {
     isPlaying = (event.data === YT.PlayerState.PLAYING);
     playIcon.classList.toggle('hidden', isPlaying);
@@ -272,24 +301,22 @@
     if (index >= 0 && index < currentPlaylist.length) {
       currentTrackIndex = index;
       const track = currentPlaylist[currentTrackIndex];
+      if (!track.videoId) return; // (YouTube 모드 전용)
       youtubePlayer.loadVideoById(track.videoId);
       originalAlbumArtUrl = track.albumImage;
       if (!useUserCover) albumArtImg.src = track.albumImage;
       trackTitleSpan.textContent = track.name || '노래 제목';
       const artistNames = (track.artists || []).map(a => a.name).join(', ');
       trackArtistSpan.textContent = artistNames ? `- ${artistNames}` : '';
+      startProgressLoop();
     }
   }
   function togglePlayPause() {
     if (!youtubePlayer || currentTrackIndex === -1) return;
     isPlaying ? youtubePlayer.pauseVideo() : youtubePlayer.playVideo();
   }
-  function playNext() {
-    if (currentPlaylist.length > 0) playTrack((currentTrackIndex + 1) % currentPlaylist.length);
-  }
-  function playPrev() {
-    if (currentPlaylist.length > 0) playTrack((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length);
-  }
+  function playNext() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex + 1) % currentPlaylist.length); }
+  function playPrev() { if (currentPlaylist.length > 0) playTrack((currentTrackIndex - 1 + currentPlaylist.length) % currentPlaylist.length); }
 
   /* -------------------- 진행바 & 볼륨 -------------------- */
   let seeking = false, progressRaf = null;
@@ -316,10 +343,78 @@
     if (youtubePlayer && youtubePlayer.setVolume) youtubePlayer.setVolume(volume);
   });
 
-  /* -------------------- YouTube API 키 -------------------- */
+  /* -------------------- API 키 -------------------- */
+  // YouTube
   const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
 
-  /* -------------------- YouTube 검색 -------------------- */
+  // Spotify (⚠️ 배포용으로는 클라이언트에서 비밀키 사용 금지!)
+  const SPOTIFY_CLIENT_ID = '13ada5c13a834887b16d181b5730a8b3';
+  const SPOTIFY_CLIENT_SECRET = 'e29f437d6c3d46509926b78b0fd885fb';
+  let spotifyToken = null;
+  let spotifyTokenExp = 0; // epoch ms
+
+  async function getSpotifyToken(){
+    const now = Date.now();
+    if (spotifyToken && now < spotifyTokenExp - 10_000) return spotifyToken;
+    const body = new URLSearchParams({ grant_type: 'client_credentials' });
+    const auth = btoa(`${SPOTIFY_CLIENT_ID}:${SPOTIFY_CLIENT_SECRET}`);
+    const res = await fetch('https://accounts.spotify.com/api/token', {
+      method: 'POST',
+      headers: { 'Authorization': `Basic ${auth}`, 'Content-Type': 'application/x-www-form-urlencoded' },
+      body
+    });
+    if (!res.ok) throw new Error('Spotify 토큰 발급 실패');
+    const data = await res.json();
+    spotifyToken = data.access_token;
+    spotifyTokenExp = Date.now() + (data.expires_in * 1000);
+    return spotifyToken;
+  }
+
+  /* -------------------- 검색 구현 -------------------- */
+  function clearResults() { searchResultsContainer.innerHTML = ''; }
+  function renderCard(track, index, mode){
+    const card = document.createElement('div');
+    card.className = 'bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
+    const artistNames = (track.artists || []).map(a => a.name).join(', ');
+    card.innerHTML = `
+      <div class="relative">
+        <img src="${track.albumImage}" alt="${track.name}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
+        ${mode==='spotify' ? '<span class="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-green-600 text-white">Spotify 메타 적용</span>' : '<span class="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-red-600 text-white">YouTube 재생</span>'}
+      </div>
+      <div class="mt-2 text-center">
+        <p class="font-bold text-gray-900 truncate text-sm" title="${track.name}">${track.name}</p>
+        <p class="text-xs text-gray-600 truncate" title="${artistNames}">${artistNames}</p>
+      </div>`;
+    card.addEventListener('click', () => {
+      if (mode==='youtube'){
+        currentPlaylist = tracksCache.youtube || [];
+        playTrack(index);
+      } else {
+        // Spotify: 메타만 적용
+        originalAlbumArtUrl = track.albumImage;
+        if (!useUserCover) albumArtImg.src = track.albumImage;
+        trackTitleSpan.textContent = track.name || '노래 제목';
+        trackArtistSpan.textContent = artistNames ? `- ${artistNames}` : '';
+      }
+    });
+    return card;
+  }
+
+  const tracksCache = { youtube: [], spotify: [] };
+
+  function displayResults(tracks, mode) {
+    clearResults();
+    if (!tracks || tracks.length === 0) {
+      if (statusDiv.textContent.endsWith('검색 중...')) statusDiv.textContent = '검색 결과가 없습니다.';
+      return;
+    }
+    statusDiv.textContent = '';
+    if (mode==='youtube'){ tracksCache.youtube = tracks; }
+    else { tracksCache.spotify = tracks; }
+    tracks.forEach((t, i) => searchResultsContainer.appendChild(renderCard(t, i, mode)));
+  }
+
+  /* ---- YouTube 검색 ---- */
   async function searchYoutube(q) {
     if (!YOUTUBE_API_KEY || !String(YOUTUBE_API_KEY).trim()) {
       statusDiv.textContent = 'YouTube API 키를 입력해주세요.';
@@ -346,40 +441,39 @@
     }
   }
 
-  function clearResults() { searchResultsContainer.innerHTML = ''; }
-  function displayResults(tracks) {
-    clearResults();
-    if (!tracks || tracks.length === 0) {
-      if (statusDiv.textContent === 'YouTube 검색 중...') statusDiv.textContent = '검색 결과가 없습니다.';
-      return;
+  /* ---- Spotify 검색(메타만) ---- */
+  async function searchSpotify(q){
+    try {
+      const token = await getSpotifyToken();
+      const url = `https://api.spotify.com/v1/search?q=${encodeURIComponent(q)}&type=track&limit=24`;
+      const res = await fetch(url, { headers: { Authorization: `Bearer ${token}` }});
+      if (!res.ok){
+        const e = await res.json().catch(()=>({}));
+        const msg = e && e.error && (e.error.message || e.error.reason) ? e.error.message || e.error.reason : 'API Error';
+        statusDiv.textContent = `검색 오류: ${msg}`;
+        return [];
+      }
+      const data = await res.json();
+      const items = data?.tracks?.items || [];
+      return items.map(it => ({
+        // 재생용 videoId 없음 (YouTube 모드에서만 사용)
+        name: it.name,
+        artists: (it.artists || []).map(a=>({name:a.name})),
+        albumImage: (it.album?.images?.[0]?.url) || PLACEHOLDER
+      }));
+    } catch (err){
+      statusDiv.textContent = '네트워크/인증 오류';
+      return [];
     }
-    statusDiv.textContent = '';
-    currentPlaylist = tracks;
-    tracks.forEach((track, index) => {
-      const card = document.createElement('div');
-      card.className = 'bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
-      const artistNames = (track.artists || []).map(a => a.name).join(', ');
-      card.innerHTML = `
-        <div class="relative">
-          <img src="${track.albumImage}" alt="${track.name}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
-        </div>
-        <div class="mt-2 text-center">
-          <p class="font-bold text-gray-900 truncate text-sm">${track.name}</p>
-          <p class="text-xs text-gray-600 truncate">${artistNames}</p>
-        </div>`;
-      card.addEventListener('click', () => { playTrack(index); startProgressLoop(); });
-      searchResultsContainer.appendChild(card);
-    });
   }
-  async function searchTracks(q) {
-    statusDiv.textContent = 'YouTube 검색 중...';
-    clearResults();
-    const list = await searchYoutube(q);
-    displayResults(list);
-  }
-  function performSearch() {
+
+  async function performSearch() {
     const q = searchInput.value.trim();
-    if (q) searchTracks(q); else { statusDiv.textContent=''; clearResults(); }
+    if (!q) { statusDiv.textContent=''; clearResults(); return; }
+    statusDiv.textContent = (searchMode==='spotify') ? 'Spotify 검색 중...' : 'YouTube 검색 중...';
+    clearResults();
+    const list = (searchMode==='spotify') ? await searchSpotify(q) : await searchYoutube(q);
+    displayResults(list, searchMode);
   }
 
   /* -------------------- 설정 패널 -------------------- */
