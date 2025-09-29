@@ -55,10 +55,25 @@
     #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
 
-    /* 검색 소스 탭 */
-    .tab-btn{ @apply px-4 py-2 text-sm rounded-md border transition; }
-    .tab-active{ @apply bg-purple-600 text-white border-purple-600; }
-    .tab-inactive{ @apply bg-white text-gray-700 border-gray-300 hover:bg-gray-50; }
+    /* ====== 검색 소스 탭(Pill) ====== */
+    .tabs-wrap{ background:#f4f4f5; border-radius:9999px; padding:6px; box-shadow: inset 0 1px 2px rgba(0,0,0,.06); }
+    .tab-pill{
+      position:relative; display:inline-flex; align-items:center; gap:.5rem;
+      padding:.5rem .9rem; border-radius:9999px; font-weight:600;
+      transition: transform .05s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
+      user-select:none;
+    }
+    .tab-pill:active{ transform: scale(.98); }
+    .tab-inactive{ color:#374151; background:transparent; }
+    .tab-inactive:hover{ background:rgba(0,0,0,.04); }
+    .tab-dot{
+      width:10px; height:10px; border-radius:9999px; box-shadow:0 0 0 0 rgba(0,0,0,0);
+      transition: box-shadow .2s ease, background .2s ease, transform .2s ease;
+    }
+    .active-spotify{ background:#16a34a; color:#fff; }
+    .active-spotify .tab-dot{ background:#22c55e; box-shadow:0 0 10px 3px rgba(34,197,94,.55); }
+    .active-youtube{ background:#dc2626; color:#fff; }
+    .active-youtube .tab-dot{ background:#ef4444; box-shadow:0 0 10px 3px rgba(239,68,68,.55); }
   </style>
 </head>
 <body class="flex justify-center min-h-screen pt-8">
@@ -83,7 +98,7 @@
               <button id="prevBtn" aria-label="Previous"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M4 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1H4z"></path><path d="M15.25 14.5a1 1 0 01-1.5.866l-6-4.5a1 1 0 010-1.732l6-4.5a1 1 0 011.5.866v8.5z"></path></svg></button>
               <button id="playPauseBtn" aria-label="Play/Pause">
                 <svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20" id="playIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM9.555 7.168A1 1 0 008 8v4a1 1 0 001.555.832l3-2a1 1 0 000-1.664l-3-2z" clip-rule="evenodd"></path></svg>
-                <svg class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20" id="pauseIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1zm4 0a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
+                <svg class="w-8 h-8 hidden" fill="currentColor" viewBox="0 0 20 20" id="pauseIcon"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8 7a1 1 0 00-1 1v4a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"></path></svg>
               </button>
               <button id="nextBtn" aria-label="Next"><svg class="w-8 h-8" fill="currentColor" viewBox="0 0 20 20"><path d="M15 4a1 1 0 00-1 1v10a1 1 0 001 1h1a1 1 0 001-1V5a1 1 0 00-1-1h-1z"></path><path d="M4.75 14.5a1 1 0 001.5.866l6-4.5a1 1 0 000-1.732l-6-4.5a1 1 0 00-1.5.866v8.5z"></path></svg></button>
             </div>
@@ -109,13 +124,16 @@
 
     <!-- ===== 검색 UI ===== -->
     <section class="card p-4 mb-4">
-      <!-- 소스 탭 -->
-      <div class="flex items-center justify-between gap-2 mb-3">
-        <div class="inline-flex gap-2" role="tablist" aria-label="Search Source">
-          <button id="tabSpotify" class="tab-btn tab-inactive" data-mode="spotify" aria-selected="false">Spotify</button>
-          <button id="tabYouTube" class="tab-btn tab-active"  data-mode="youtube" aria-selected="true">YouTube</button>
+      <!-- 소스 탭 (설명 문구 삭제됨) -->
+      <div class="flex items-center mb-3">
+        <div id="sourceTabs" class="tabs-wrap inline-flex gap-1">
+          <button id="tabSpotify" class="tab-pill tab-inactive" data-mode="spotify" aria-selected="false">
+            <span class="tab-dot"></span>Spotify
+          </button>
+          <button id="tabYouTube" class="tab-pill active-youtube" data-mode="youtube" aria-selected="true">
+            <span class="tab-dot"></span>YouTube
+          </button>
         </div>
-        <small class="text-xs text-gray-500">Spotify: 메타데이터 적용 / YouTube: 재생</small>
       </div>
 
       <div class="flex w-full items-center gap-2">
@@ -264,11 +282,22 @@
   let searchMode = 'youtube'; // 'spotify' | 'youtube'
   function setTab(mode){
     searchMode = mode;
-    const map = {spotify: tabSpotify, youtube: tabYouTube};
-    [tabSpotify, tabYouTube].forEach(btn=>{
-      if(btn===map[mode]){ btn.classList.remove('tab-inactive'); btn.classList.add('tab-active'); btn.setAttribute('aria-selected','true'); }
-      else{ btn.classList.remove('tab-active'); btn.classList.add('tab-inactive'); btn.setAttribute('aria-selected','false'); }
-    });
+
+    // 초기화
+    tabSpotify.classList.remove('active-spotify','tab-inactive');
+    tabYouTube.classList.remove('active-youtube','tab-inactive');
+
+    if(mode==='spotify'){
+      tabSpotify.classList.add('active-spotify');
+      tabYouTube.classList.add('tab-inactive');
+      tabSpotify.setAttribute('aria-selected','true');
+      tabYouTube.setAttribute('aria-selected','false');
+    }else{
+      tabYouTube.classList.add('active-youtube');
+      tabSpotify.classList.add('tab-inactive');
+      tabYouTube.setAttribute('aria-selected','true');
+      tabSpotify.setAttribute('aria-selected','false');
+    }
     statusDiv.textContent = '';
     clearResults();
   }
@@ -372,6 +401,7 @@
 
   /* -------------------- 검색 구현 -------------------- */
   function clearResults() { searchResultsContainer.innerHTML = ''; }
+
   function renderCard(track, index, mode){
     const card = document.createElement('div');
     card.className = 'bg-white rounded-xl p-3 cursor-pointer hover:shadow-lg transition-shadow';
@@ -379,7 +409,6 @@
     card.innerHTML = `
       <div class="relative">
         <img src="${track.albumImage}" alt="${track.name}" class="w-full rounded-lg shadow-sm aspect-square object-cover">
-        ${mode==='spotify' ? '<span class="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-green-600 text-white">Spotify 메타 적용</span>' : '<span class="absolute top-2 left-2 text-[10px] px-2 py-0.5 rounded bg-red-600 text-white">YouTube 재생</span>'}
       </div>
       <div class="mt-2 text-center">
         <p class="font-bold text-gray-900 truncate text-sm" title="${track.name}">${track.name}</p>
@@ -456,7 +485,6 @@
       const data = await res.json();
       const items = data?.tracks?.items || [];
       return items.map(it => ({
-        // 재생용 videoId 없음 (YouTube 모드에서만 사용)
         name: it.name,
         artists: (it.artists || []).map(a=>({name:a.name})),
         albumImage: (it.album?.images?.[0]?.url) || PLACEHOLDER
