@@ -419,7 +419,16 @@
   }
 
   searchButton.addEventListener('click', performSearch);
+  // 기존: Enter로 검색
   searchInput.addEventListener('keyup', e=>{ if(e.key==='Enter') performSearch(); });
+
+  // ✅ 추가: 입력이 비어지면 두 섹션 결과/상태 모두 초기화
+  searchInput.addEventListener('input', () => {
+    if (!searchInput.value.trim()) {
+      clearResults();   // spotifyResults / youtubeResults / statusSpotify / statusYouTube 모두 비움
+    }
+  });
+
 
   /* -------------------- 설정/스타일 컨트롤 -------------------- */
   settingsIconBtn.addEventListener('click', ()=> settingsPanel.classList.toggle('open'));
