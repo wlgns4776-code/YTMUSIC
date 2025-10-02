@@ -47,13 +47,15 @@
     /* ===== 보라 카드 상단 고정 ===== */
     .sticky-card{
       position: sticky;
-      top: 1rem;   /* 꼭대기에 붙이려면 0 */
-      z-index: 40; /* 설정 패널(z-50)보다 낮게 */
+      top: 1rem;
+      z-index: 40;
     }
 
     /* 설정 패널 애니메이션 */
     #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
+
+    /* 아이콘 왜곡 방지 */
     svg { display:block; } /* baseline/안티앨리어싱 문제 방지 */
   </style>
 </head>
@@ -146,8 +148,15 @@
 
   <!-- ===== 설정 플로팅 버튼 & 패널 ===== -->
   <div class="fixed bottom-6 right-6 z-50">
-    <button id="settingsIconBtn" class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition transform hover:scale-110 focus:outline-none" aria-label="설정" type="button">
-      <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756.426-1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+    <button id="settingsIconBtn"
+      class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition-transform hover:scale-110 focus:outline-none"
+      aria-label="설정" type="button">
+      <!-- 선명한 기어 아이콘 -->
+      <svg class="w-7 h-7 block" viewBox="0 0 24 24" fill="none"
+           stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"></circle>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.16a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.9 16.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.76a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.63 2.3l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V1a2 2 0 1 1 4 0v.16a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 6.63l-.06.06a1.65 1.65 0 0 0-.3 1.82 1.65 1.65 0 0 0 1.5 1H22a2 2 0 1 1 0 4h-.16a1.65 1.65 0 0 0-1.5 1Z"/>
+      </svg>
     </button>
 
     <div id="settingsPanel" class="card absolute bottom-20 right-0 w-80 bg-white p-6 rounded-2xl shadow-2xl origin-bottom-right space-y-6">
@@ -488,21 +497,25 @@
     if(v) artistNameP.textContent=v;
   });
 
-   imageUpload.addEventListener('change', e=>{
+  // 커버 이미지 업로드(재업로드도 즉시 반영)
+  imageUpload.addEventListener('change', e=>{
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = ev => {
       userCoverUrl = ev.target.result;
-      useUserCover = true;  // ✅ 새 이미지 업로드 시 항상 true로 변경
+      useUserCover = true;      // 새 이미지 업로드 시 항상 true
       albumArtImg.src = userCoverUrl;
     };
     reader.readAsDataURL(file);
-    e.target.value = ""; // ✅ 같은 파일 다시 선택도 가능하게 input 초기화
+    e.target.value = "";         // 같은 파일 재선택 가능
   });
 
+  // 기본 썸네일로 복구
   revertCover.addEventListener('click', ()=>{
-    useUserCover=false; userCoverUrl=null; albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER;
+    useUserCover=false;
+    userCoverUrl=null;
+    albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER;
   });
 
   applyColors.addEventListener('click', ()=>{
