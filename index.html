@@ -18,7 +18,7 @@
     body{font-family:'Noto Sans KR',sans-serif}
     .card{ background:#fff; border-radius:20px; box-shadow:0 10px 25px -5px rgba(0,0,0,.1),0 10px 10px -5px rgba(0,0,0,.04); }
 
-    /* ===== Player - 공통 ===== */
+    /* ===== Player 공통 ===== */
     #player{
       display:flex;
       color:#fff;
@@ -28,79 +28,78 @@
       width:100%;
     }
     .player-top{ display:flex; width:100%; align-items:center; padding:1rem; gap:1rem; }
-    #player .album-art{ width:5rem; height:5rem; border-radius:0.75rem }
+    #player .album-art{ width:5rem; height:5rem; }
     .text-glow{ text-shadow:0 1px 2px rgba(0,0,0,.25); }
-
-    /* 크기 조절이 항상 먹도록 !important */
-    .title-text{ font-size:var(--title-size) !important; line-height:1.2; }
-    .meta-text{ font-size:var(--meta-size) !important; }
-
+    .title-text{ font-size:var(--title-size); line-height:1.2; }
+    .meta-text{ font-size:var(--meta-size); }
     .player-buttons button { cursor: pointer; transition: transform 0.1s ease; }
     .player-buttons button:active { transform: scale(0.9); }
 
-    /* 파형: 렌더링 안전장치 */
+    /* 파형 캔버스: 0px 되는 것 방지 */
     #waveformCanvas{
-      display:block;             /* 인라인 캔버스 베이스라인 문제 방지 */
+      display:block;           /* inline 특성으로 생기는 높이 문제 방지 */
       width:140px;
       height:44px;
+      min-width:100px;
+      flex:0 0 auto;
     }
 
-    /* ===== 세로형 ===== */
+    /* ===== 레이아웃: 세로형 ===== */
     #player.layout-vertical{
-      max-width: 310px;        /* 얇은 카드 */
+      max-width: 310px;
       margin: 0 auto;
     }
     #player.layout-vertical .player-top{
       flex-direction:column;
       align-items:center;
       text-align:center;
-      gap:.5rem;
-      padding: .85rem 1rem;
+      padding: 0.9rem 1rem;
+      gap: 0.6rem;
     }
     #player.layout-vertical .album-art{ width:8rem; height:8rem; }
     #player.layout-vertical .titles{ width:100%; }
-    #player.layout-vertical .titles h2{ justify-content:center; }
+    #player.layout-vertical .titles .title-text{ display:block; width:100%; }
+    #player.layout-vertical .meta-row{ width:100%; display:flex; align-items:center; justify-content:center; }
     #player.layout-vertical .player-controls{
       width:100%;
       display:flex;
-      flex-direction:column;     /* 버튼 위 / 파형 아래 */
+      flex-direction:column;
       align-items:center;
-      gap:.5rem;
+      gap:.55rem;
     }
-    /* 세로형: 파형은 재생 버튼 아래 */
+    /* 세로형에서는 파형이 버튼 아래 중앙 */
     #player.layout-vertical #waveformCanvas{
-      order:2;
-      width:110px;
+      margin: .2rem 0 0 0;
+      width:120px;
       height:36px;
-      margin: .25rem 0 0 0;
     }
 
-    /* ===== 가로형 ===== */
+    /* ===== 레이아웃: 가로형 ===== */
     #player.layout-horizontal .player-top{
       flex-direction:row;
       align-items:center;
-      text-align:left;
+      text-align:left; /* 제목/가수 왼쪽 정렬 */
     }
-    /* 가로형: 제목/메타는 왼쪽 정렬로 복구 */
-    #player.layout-horizontal .titles{ min-width:0; flex:1 1 auto; }
-    #player.layout-horizontal .titles h2{ justify-content:flex-start; text-align:left; }
-    #player.layout-horizontal .titles .meta-text-wrap{ justify-content:flex-start; }
     #player.layout-horizontal .album-art{ width:5rem; height:5rem; }
-    /* 가로형: 파형은 버튼 오른쪽 */
+    /* 가로형: 버튼 오른쪽에 파형 */
     #player.layout-horizontal .player-controls{
-      display:flex; align-items:center; gap:.5rem;
-      margin-left:auto;
+      display:flex;
+      align-items:center;
+      margin-left:auto;        /* 우측 영역으로 밀기 */
+      gap:.5rem;
     }
-    #player.layout-horizontal #waveformCanvas{ margin-left:.5rem; width:140px; height:44px; }
+    #player.layout-horizontal #waveformCanvas{ margin-left:.75rem; }
 
-    /* ===== 결과 섹션 스크롤 ===== */
+    /* ===== 결과 섹션 내부 스크롤 ===== */
     .results-grid{
       max-height: 460px;
       overflow-y: auto;
       padding-right: 4px;
       overscroll-behavior: contain;
     }
-    @media (max-width: 640px){ .results-grid{ max-height: 320px; } }
+    @media (max-width: 640px){
+      .results-grid{ max-height: 320px; }
+    }
     .results-grid::-webkit-scrollbar{width:8px}
     .results-grid::-webkit-scrollbar-track{background:#f1f1f1;border-radius:10px}
     .results-grid::-webkit-scrollbar-thumb{background:#C4B5FD;border-radius:10px}
@@ -118,15 +117,15 @@
     <section class="mb-4 sticky-card">
       <div id="player" class="layout-horizontal">
         <div class="player-top">
-          <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art shadow-md transition-all">
+          <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
 
           <div class="titles flex-grow min-w-0">
-            <h2 class="title-text font-bold flex flex-wrap items-baseline gap-1 text-glow">
+            <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
               <span id="trackTitle" class="truncate">노래 제목</span>
               <span id="trackArtist" class="opacity-90"></span>
             </h2>
-            <div class="meta-text-wrap flex items-center opacity-90 text-glow meta-text gap-2">
-              <span>SING 🎤</span><p id="artistName">채널명</p>
+            <div class="meta-row opacity-90 text-glow meta-text">
+              <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
             </div>
           </div>
 
@@ -138,6 +137,7 @@
                   <path d="M18 6.5a1 1 0 0 0-1.55-.832l-8 5a1 1 0 0 0 0 1.664l8 5A1 1 0 0 0 18 17.5v-11z"/>
                 </svg>
               </button>
+
               <button id="playPauseBtn" aria-label="Play/Pause" class="text-white">
                 <svg id="playIcon" class="w-9 h-9" viewBox="0 0 24 24" fill="currentColor">
                   <circle cx="12" cy="12" r="10" opacity=".18"></circle>
@@ -149,6 +149,7 @@
                   <rect x="12.4" y="8" width="2.6" height="8" rx="0.6"></rect>
                 </svg>
               </button>
+
               <button id="nextBtn" aria-label="Next" class="text-white/95">
                 <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M18 19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/>
@@ -156,7 +157,8 @@
                 </svg>
               </button>
             </div>
-            <canvas id="waveformCanvas" class="ml-2"></canvas>
+
+            <canvas id="waveformCanvas"></canvas>
           </div>
         </div>
       </div>
@@ -197,7 +199,7 @@
     </section>
   </div>
 
-  <!-- ===== 설정 패널 ===== -->
+  <!-- ===== 설정 플로팅 버튼 & 패널 ===== -->
   <div class="fixed bottom-6 right-6 z-50">
     <button id="settingsIconBtn"
       class="bg-purple-600 text-white rounded-full p-3 shadow-lg hover:bg-purple-700 transition-transform hover:scale-110 focus:outline-none"
@@ -205,7 +207,7 @@
       <svg class="w-7 h-7 block" viewBox="0 0 24 24" fill="none"
            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.16a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.9 16.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.76a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.63 2.3l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V1a2 2 0 1 1 4 0v.16a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 6.63l-.06.06a1.65 1.65 0 0 0-.3 1.82 1.65 1.65 0 0 0 1.5 1H22a2 2 0 1 1 0 4h-.16a1.65 1.65 0 0 0-1.5 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.16a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.9 16.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.76a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.63 2.3l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V1a2 2 0 1 1 4 0v.16a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 6.63l-.06.06a1.65 1.65 0  0 0-.3 1.82 1.65 1.65 0 0 0 1.5 1H22a2 2 0 1 1 0 4h-.16a1.65 1.65 0 0 0-1.5 1Z"/>
       </svg>
     </button>
 
@@ -219,7 +221,7 @@
       </div>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700">커버(카드) 색상</label>
+        <label class="block text-sm font-medium text-gray-700">커버 색상(그라데이션)</label>
         <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
           <input id="primaryColor" type="color" value="#A855F7" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
           <input id="secondaryColor" type="color" value="#7C3AED" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
@@ -228,7 +230,6 @@
         </div>
       </div>
 
-      <!-- 레이아웃 전환 -->
       <div>
         <label class="block text-sm font-medium text-gray-700">카드 레이아웃</label>
         <div class="mt-2 flex flex-row items-center gap-2">
@@ -331,8 +332,8 @@
     playerDiv.classList.toggle('layout-horizontal', !isV);
 
     // 버튼 스타일 토글
-    layoutVerticalBtn.classList.toggle('bg-purple-500', isV);
-    layoutVerticalBtn.classList.toggle('text-white', isV);
+    layoutVerticalBtn.classList.toggle('bg-purple-500', !isV ? false : true);
+    layoutVerticalBtn.classList.toggle('text-white', !isV ? false : true);
     layoutVerticalBtn.classList.toggle('bg-gray-200', !isV);
     layoutVerticalBtn.classList.toggle('text-gray-700', !isV);
 
@@ -341,7 +342,7 @@
     layoutHorizontalBtn.classList.toggle('bg-gray-200', isV);
     layoutHorizontalBtn.classList.toggle('text-gray-700', isV);
   }
-  // 초기: 가로형
+  // 초기: 가로형(요청 기준), 필요 시 세로형 버튼 눌러 전환
   setLayout('horizontal');
 
   layoutHorizontalBtn.addEventListener('click', ()=> setLayout('horizontal'));
@@ -432,7 +433,7 @@
   });
 
   /* -------------------- API 키 -------------------- */
-  const YOUTUBE_API_KEY = 'AIzaSyCydSU4s3HYDPKqEp37JIY8HdAmHvelHns';
+  const YOUTUBE_API_KEY = 'YOUR_YT_KEY'; // 실제 키로 교체
   const SPOTIFY_CLIENT_ID = '13ada5c13a834887b16d181b5730a8b3';
   const SPOTIFY_CLIENT_SECRET = 'e29f437d6c3d46509926b78b0fd885fb';
   let spotifyToken=null, spotifyTokenExp=0;
@@ -561,18 +562,23 @@
     if(v) artistNameP.textContent=v;
   });
 
-  // 커버 이미지 업로드
   imageUpload.addEventListener('change', e=>{
     const file = e.target.files[0];
     if (!file) return;
     const reader = new FileReader();
-    reader.onload = ev => { userCoverUrl = ev.target.result; useUserCover = true; albumArtImg.src = userCoverUrl; };
+    reader.onload = ev => {
+      userCoverUrl = ev.target.result;
+      useUserCover = true;
+      albumArtImg.src = userCoverUrl;
+    };
     reader.readAsDataURL(file);
     e.target.value = "";
   });
 
   revertCover.addEventListener('click', ()=>{
-    useUserCover=false; userCoverUrl=null; albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER;
+    useUserCover=false;
+    userCoverUrl=null;
+    albumArtImg.src=originalAlbumArtUrl||PLACEHOLDER;
   });
 
   applyColors.addEventListener('click', ()=>{
@@ -583,15 +589,14 @@
     primaryColor.value='#A855F7'; secondaryColor.value='#7C3AED'; applyColors.click();
   });
 
-  applyBg.addEventListener('click', ()=>{ document.documentElement.style.setProperty('--bg-color', bgColor.value); });
-  resetBg.addEventListener('click', ()=>{ bgColor.value='#ffffff'; applyBg.click(); });
-
   titleSize.addEventListener('input', e=>{
-    const v=`${e.target.value}px`; titleSizeVal.textContent=v;
+    const v=`${e.target.value}px`;
+    titleSizeVal.textContent=v;
     document.documentElement.style.setProperty('--title-size', v);
   });
   metaSize.addEventListener('input', e=>{
-    const v=`${e.target.value}px`; metaSizeVal.textContent=v;
+    const v=`${e.target.value}px`;
+    metaSizeVal.textContent=v;
     document.documentElement.style.setProperty('--meta-size', v);
   });
   resetTextSize.addEventListener('click', ()=>{
@@ -604,12 +609,12 @@
   function initWaveform(canvas, options = {}) {
     if (!canvas) return;
     const cfg = {
-      barCount:18, gap:3, smoothing:0.08,
-      baseSpeedHz:0.6, rippleSpeedHz:1.2,
-      baseWeight:0.75, rippleWeight:0.25,
-      minRatio:0.25, maxRatio:0.85,
-      fillStyle:'rgba(255,255,255,0.9)',
-      glowBlur:6, glowColor:'rgba(255,255,255,0.35)',
+      barCount:18,gap:3,smoothing:0.08,
+      baseSpeedHz:0.6,rippleSpeedHz:1.2,
+      baseWeight:0.75,rippleWeight:0.25,
+      minRatio:0.25,maxRatio:0.85,
+      fillStyle:'rgba(255,255,255,0.88)',
+      glowBlur:6,glowColor:'rgba(255,255,255,0.35)',
       ...options
     };
     const dpr = Math.max(1, window.devicePixelRatio || 1);
@@ -619,7 +624,7 @@
     const easeCos=t=>0.5*(1-Math.cos(Math.PI*2*t));
 
     function resizeIfNeeded(){
-      const cssW=canvas.clientWidth||140, cssH=canvas.clientHeight||44;
+      const cssW=canvas.clientWidth||120, cssH=canvas.clientHeight||40;
       if(cssW!==lastW||cssH!==lastH){
         lastW=cssW; lastH=cssH;
         canvas.width=Math.floor(cssW*dpr);
@@ -630,10 +635,16 @@
     function roundRect(ctx,x,y,w,h,r){
       const rr=Math.min(r,w*.5,h*.5);
       ctx.beginPath();
-      ctx.moveTo(x+rr,y); ctx.lineTo(x+w-rr,y); ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
-      ctx.lineTo(x+w,y+h-rr); ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
-      ctx.lineTo(x+rr,y+h); ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
-      ctx.lineTo(x,y+rr); ctx.quadraticCurveTo(x,y,x+rr,y); ctx.closePath();
+      ctx.moveTo(x+rr,y);
+      ctx.lineTo(x+w-rr,y);
+      ctx.quadraticCurveTo(x+w,y,x+w,y+rr);
+      ctx.lineTo(x+w,y+h-rr);
+      ctx.quadraticCurveTo(x+w,y+h,x+w-rr,y+h);
+      ctx.lineTo(x+rr,y+h);
+      ctx.quadraticCurveTo(x,y+h,x,y+h-rr);
+      ctx.lineTo(x,y+rr);
+      ctx.quadraticCurveTo(x,y,x+rr,y);
+      ctx.closePath();
     }
     function render(ts){
       if(!startedAt) startedAt=ts;
@@ -660,8 +671,7 @@
     }
     requestAnimationFrame(render);
   }
-
-  /* 캔버스 초기화 (레이아웃과 무관하게 1회만) */
+  /* 파형 시작 */
   initWaveform(waveformCanvas);
 </script>
 </body>
