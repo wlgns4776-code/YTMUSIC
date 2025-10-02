@@ -34,7 +34,9 @@
     .meta-text{ font-size:var(--meta-size); }
     .player-buttons button { cursor: pointer; transition: transform 0.1s ease; }
     .player-buttons button:active { transform: scale(0.9); }
-    #waveformCanvas{ width:140px; height:44px }
+
+    /* 파형: 블록 처리 + 기본 크기 확정 (가끔 0폭 문제 방지) */
+    #waveformCanvas{ display:block; width:140px; height:44px }
 
     /* ===== 세로형 레이아웃 (추출/이식) 기본 동작 ===== */
     #player.layout-vertical .player-top{
@@ -53,7 +55,7 @@
     }
     #player.layout-vertical #waveformCanvas{ margin-left:0; }
 
-    /* ===== 가로형(참고: 기본 가로형 스타일도 제공) ===== */
+    /* ===== 가로형 ===== */
     #player.layout-horizontal .player-top{
       flex-direction:row;
       align-items:center;
@@ -61,6 +63,12 @@
     }
     #player.layout-horizontal .album-art{ width:5rem; height:5rem; }
     #player.layout-horizontal #waveformCanvas{ margin-left:1rem; }
+
+    /* 가로/세로 정렬 차별화: 제목/메타 정렬 훅 */
+    #player.layout-horizontal .titles h2{ justify-content:flex-start; text-align:left; }
+    #player.layout-horizontal .meta-row{ justify-content:flex-start; text-align:left; }
+    #player.layout-vertical   .titles h2{ justify-content:center;   text-align:center; }
+    #player.layout-vertical   .meta-row{  justify-content:center;   text-align:center; }
 
     /* ===== 결과 섹션 내부 스크롤 ===== */
     .results-grid{
@@ -93,7 +101,7 @@
       margin: 0 auto;            /* 중앙 정렬 */
     }
     #player.layout-vertical .album-art{
-      width: 8rem;               /* 10rem → 7rem */
+      width: 8rem;
       height: 8rem;
     }
     #player.layout-vertical .player-top{
@@ -106,7 +114,7 @@
       margin: 0;
     }
     #player.layout-vertical .player-buttons svg{
-      width: 28px !important;    /* 버튼 아이콘 축소 (Tailwind w-8 덮어쓰기) */
+      width: 28px !important;    /* 버튼 아이콘 축소 */
       height: 28px !important;
     }
   </style>
@@ -119,11 +127,13 @@
         <div class="player-top">
           <img id="albumArt" src="data:image/svg+xml;utf8,<?xml version='1.0' encoding='UTF-8'?><svg xmlns='http://www.w3.org/2000/svg' width='80' height='80'><rect width='100%' height='100%' rx='10' fill='%236d28d9'/><text x='50%25' y='50%25' dominant-baseline='middle' text-anchor='middle' font-family='sans-serif' font-size='14' fill='%23ffffff'>Cover</text></svg>" alt="Album Art" class="album-art rounded-lg shadow-md flex-shrink-0 transition-all">
           <div class="titles flex-grow min-w-0">
-            <h2 class="font-bold flex flex-wrap items-baseline justify-center gap-1 text-glow title-text">
+            <!-- 가운데 정렬 클래스 제거, 세로/가로는 CSS에서 분기 -->
+            <h2 class="font-bold flex flex-wrap items-baseline gap-1 text-glow title-text">
               <span id="trackTitle" class="truncate">노래 제목</span>
               <span id="trackArtist" class="opacity-90"></span>
             </h2>
-            <div class="flex items-center justify-center opacity-90 text-glow meta-text">
+            <!-- meta-row 훅 추가 (정렬 분기용) -->
+            <div class="meta-row flex items-center opacity-90 text-glow meta-text">
               <span class="mr-2">SING 🎤</span><p id="artistName">채널명</p>
             </div>
           </div>
@@ -151,7 +161,7 @@
 
               <button id="nextBtn" aria-label="Next" class="text-white/95">
                 <svg class="w-8 h-8" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18 19a1 1 0 0 0 1-1V6a1 1 0  0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/>
+                  <path d="M18 19a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-1a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h1z"/>
                   <path d="M6 6.5a1 1 0 0 1 1.55-.832l8 5a1 1 0 0 1 0 1.664l-8 5A1 1 0 0 1 6 17.5v-11z"/>
                 </svg>
               </button>
@@ -206,7 +216,7 @@
       <svg class="w-7 h-7 block" viewBox="0 0 24 24" fill="none"
            stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <circle cx="12" cy="12" r="3"></circle>
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.16a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.9 16.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.76a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.63 2.3l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V1a2 2 0 1 1 4 0v.16a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 6.63l-.06.06a1.65 1.65 0 0 0-.3 1.82 1.65 1.65 0 0 0 1.5 1H22a2 2 0 1 1 0 4h-.16a1.65 1.65 0 0 0-1.5 1Z"/>
+        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.16a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06A2 2 0 1 1 3.9 16.9l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H2a2 2 0 1 1 0-4h.76a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06A2 2 0 1 1 6.63 2.3l.06.06a1.65 1.65 0 0 0 1.82.33 1.65 1.65 0 0 0 1-1.51V1a2 2 0 1 1 4 0v.16a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06A2 2 0 1 1 21.7 6.63l-.06.06a1.65 1.65 0 0 0-.3 1.82 1.65 1.65 0  0 0 1.5 1H22a2 2 0 1 1 0 4h-.16a1.65 1.65 0 0 0-1.5 1Z"/>
       </svg>
     </button>
 
@@ -227,16 +237,6 @@
             <input id="imageUpload" type="file" class="hidden" accept="image/*">
           </label>
           <button id="revertCover" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">원래 썸네일</button>
-        </div>
-      </div>
-
-      <div>
-        <label class="block text-sm font-medium text-gray-700">카드 색상</label>
-        <div class="mt-2 flex flex-row flex-wrap items-center gap-2">
-          <input id="primaryColor" type="color" value="#A855F7" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
-          <input id="secondaryColor" type="color" value="#7C3AED" class="w-10 h-10 p-1 border-0 rounded-md cursor-pointer">
-          <button id="applyColors" class="h-10 px-4 text-sm whitespace-nowrap bg-purple-500 text-white rounded-md hover:bg-purple-600" type="button">적용</button>
-          <button id="resetColors" class="h-10 px-4 text-sm whitespace-nowrap bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300" type="button">기본</button>
         </div>
       </div>
 
@@ -688,6 +688,10 @@
     requestAnimationFrame(render);
   }
   initWaveform(waveformCanvas);
+
+  /* ---- 텍스트 크기 초기 동기화 (슬라이더 값을 즉시 반영) ---- */
+  titleSize.dispatchEvent(new Event('input'));
+  metaSize.dispatchEvent(new Event('input'));
 </script>
 </body>
 </html>
