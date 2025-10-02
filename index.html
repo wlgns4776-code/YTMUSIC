@@ -54,6 +54,7 @@
     /* 설정 패널 애니메이션 */
     #settingsPanel{opacity:0;transform:scale(.95) translateY(10px);transition:opacity .2s,transform .2s;pointer-events:none}
     #settingsPanel.open{opacity:1;transform:scale(1) translateY(0);pointer-events:auto}
+    svg { display:block; } /* baseline/안티앨리어싱 문제 방지 */
   </style>
 </head>
 <body class="flex justify-center min-h-screen pt-8">
